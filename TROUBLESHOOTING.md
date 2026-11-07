@@ -1,0 +1,38 @@
+# Troubleshooting
+
+Symptom-oriented. Most entries come from the upstream project's FAQ and are
+reproducible field reports, not guesses.
+
+| Symptom | Likely cause | Action |
+| --- | --- | --- |
+| Stick flashes and returns to the boot menu, or boots straight to Windows; no `loader.log` | The EFI never ran | Check, in order: `EFI\BOOT\BOOTX64.EFI` exists (not a flat `BOOTX64.EFI` at root, not `U:\usbroot\...`); Secure Boot is off; you picked the **`UEFI:`** entry, not a CSM one; the stick is FAT32. No `loader.log` = nothing was written. |
+| Black screen or frozen image during the transaction | GOP detach | Normal. Wait; the loader restores the display or chains to Windows. Do not power off mid-transaction unless it is clearly stuck. |
+| Windows shows Recovery `0xc000009a` after a green log | v2.1.10 keeps the asset cache across the chain | Put an empty file `tx-free-assets.txt` at the stick root and replay. (v2.1.11 frees it by default.) |
+| `0xc000000f` / `0xc0000225` | Two ESPs, chain took the stale one | v2.1.10 resolves by partition identity; update if you built an older tag. |
+| Stuck with CSM enabled | CSM boot path | Turn CSM off in firmware and use the `UEFI:` entry; #107 documents the CSM-on GOP behaviour. |
+| `MAP_PHYS win32 error 5` from ssdiag | HVCI or a kernel-mode AV filter holds the mapping | 0.6.3+ prints the precondition breakdown. Pausing user-mode AV is not enough; remove/disable the kernel filter or HVCI, reboot. |
+| Antivirus flags `ssdiag.exe` | Embedded kernel driver, unsigned host | Expected; it ships as a separate asset for this reason. Restore from quarantine. |
+| Gate open but SS values wrong | Selectors reverted | `ssdiag --reapply` (writes SS0/SS1 only behind an open gate; does not write PLM). |
+| Unlocked but no speedup | Power wall, quantized path, or workload not using FP32-accumulate tensor | Verify SS0/SS1 first. BF16/FP16/TF32 with FP32 accumulate move; INT8/INT4/FP32 and decode-bound workloads do not. |
+| Unlock gone after sleep or power loss | Volatile register state | Expected. Replay the stick. |
+| Board powers off at image handoff | Board-specific chain failure | #128 (ASUS B760M) is closed by v2.1.10; update and retry. If it persists, archive `loader.log` and report upstream with board/BIOS. |
+
+## Persistent boot without a USB stick (expert)
+
+The upstream project documents but deliberately does not automate this. At your
+own risk:
+
+1. Shrink a data volume by ~2 GB (keep the space unallocated or create a FAT32
+   partition; it must be FAT32).
+2. Copy the stick contents to that partition, preserving `EFI\BOOT\BOOTX64.EFI`.
+3. Reboot into the firmware boot menu and pick the entry shown as `UEFI OS` (or
+   the volume label). Set it first only if you accept editing boot order.
+
+It is reversible from the firmware boot menu; nothing is flashed. Keep the USB
+stick as a fallback.
+
+## Safety
+
+- Do not retry after a fault in the same session: power off fully first.
+- This workflow does not touch the ESP, NVRAM BootOrder or VBIOS.
+- If the module/loader reports firmware did not stop, power off before retrying.

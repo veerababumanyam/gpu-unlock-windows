@@ -1,0 +1,48 @@
+$ErrorActionPreference = 'Stop'
+Import-Module (Join-Path (Split-Path -Parent $PSScriptRoot) 'Unlock.psm1') -Force
+
+$script:fail = 0
+function Assert-UnlockTest {
+    param([bool]$Condition, [string]$Message)
+    if ($Condition) {
+        Write-Host "ok   $Message"
+    }
+    else {
+        Write-Host "FAIL $Message" -ForegroundColor Red
+        $script:fail++
+    }
+}
+
+Assert-UnlockTest ((Convert-UnlockBusId '00000000:04:00.0') -eq '0000:04:00.0') 'nvidia-smi bus id normalizes'
+Assert-UnlockTest ((Convert-UnlockBusId '04:00.0') -eq '0000:04:00.0') 'short bus id normalizes'
+Assert-UnlockTest ((Convert-UnlockBusId '0000:04:00.0') -eq '0000:04:00.0') 'full bus id is stable'
+
+$cfg = Get-UnlockConfig
+Assert-UnlockTest (@($cfg.expectedFiles.ad102).Count -eq 7) 'config lists 7 ad102 assets'
+Assert-UnlockTest (@($cfg.expectedFiles.ga102).Count -eq 7) 'config lists 7 ga102 assets'
+Assert-UnlockTest (@($cfg.expectedFiles.tu10x).Count -eq 7) 'config lists 7 tu10x assets'
+
+$tmp = Join-Path $env:TEMP ('gpu-unlock-test-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+    $r = Test-UnlockStaging -Root $tmp -Family ad102
+    Assert-UnlockTest (-not $r.Ok) 'empty staging is rejected'
+
+    foreach ($f in $cfg.expectedFiles.ad102) {
+        Set-Content -LiteralPath (Join-Path $tmp $f) -Value 'x'
+    }
+    New-Item -ItemType Directory -Force -Path (Join-Path $tmp 'EFI\BOOT') | Out-Null
+    Set-Content -LiteralPath (Join-Path $tmp 'EFI\BOOT\BOOTX64.EFI') -Value 'x'
+
+    $r = Test-UnlockStaging -Root $tmp -Family ad102
+    Assert-UnlockTest ($r.Ok) 'complete staging is accepted'
+}
+finally {
+    Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+if ($script:fail -gt 0) {
+    Write-Host "$script:fail test(s) failed" -ForegroundColor Red
+    exit 1
+}
+Write-Host 'All tests passed.' -ForegroundColor Green

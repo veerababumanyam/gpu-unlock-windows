@@ -1,0 +1,4 @@
+usbroot/
+inputs/
+*.log
+ssdiag.exe

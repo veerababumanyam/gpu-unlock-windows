@@ -1,0 +1,35 @@
+{
+  "repository": "physicsdolphin/nv-uefi-unlocker",
+  "release": "v2.1.10",
+  "ssdiagAsset": "ssdiag-x86_64-windows-0.6.4.exe",
+  "efiPath": "EFI/BOOT/BOOTX64.EFI",
+  "expectedFiles": {
+    "ad102": [
+      "booter_load_ad102.bin",
+      "gsp_boot_ad102.bin",
+      "gsp_boot_desc_ad102.bin",
+      "fwimage_ad102.bin",
+      "fwsignature_ad102.bin",
+      "scrubber_ad10x.bin",
+      "v67-ad102-four-plm.bin"
+    ],
+    "ga102": [
+      "booter_load_ga102.bin",
+      "gsp_boot_ga102.bin",
+      "gsp_boot_desc_ga102.bin",
+      "fwimage_ga102.bin",
+      "fwsignature_ga102.bin",
+      "scrubber_ad10x.bin",
+      "v67-ga102-four-plm.bin"
+    ],
+    "tu10x": [
+      "booter_load_tu10x.bin",
+      "gsp_boot_tu10x.bin",
+      "gsp_boot_desc_tu10x.bin",
+      "fwimage_tu10x.bin",
+      "fwsignature_tu10x.bin",
+      "sec2_bl_tu10x.bin",
+      "v67-tu10x-four-plm.bin"
+    ]
+  }
+}

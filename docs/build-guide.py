@@ -357,6 +357,11 @@ def story():
     out.append(code(".\\verify.ps1 -Elevate"))
     out.append(p("The status app's log is at <b>%LOCALAPPDATA%\\gpu-unlock-windows\\status.log</b> and rotates automatically (five files, 5 MB each)."))
 
+    out.append(h1("Benchmark"))
+    out.append(p("The register check proves the selectors are live; the benchmark proves the rate moved."))
+    out.append(p("Run <b>.\\bench.ps1 -Install</b> once - it creates a per-user environment and installs the CUDA PyTorch wheel (multi-GB, no admin) - then <b>.\\bench.ps1</b>, or press <b>Benchmark</b> in the status app."))
+    out.append(p("It reports BF16 GEMM TFLOPS with FP32 accumulate, the path this unlock speeds up. The unlock and the status app themselves need no Python."))
+
     out.append(h1("Troubleshooting"))
     out.append(
         table(

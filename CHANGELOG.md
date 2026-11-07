@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.4] - 2026-11-07
+
+### Added
+- `bench.ps1`: installs the benchmark's CUDA PyTorch into a per-user virtual
+  environment (`%LOCALAPPDATA%\gpu-unlock-windows\bench\.venv`), reports
+  `-Status`, and runs the BF16 GEMM. The environment is only accepted once
+  `torch.cuda.is_available()` is true, and the resolved versions are recorded in
+  `env.json`. No admin rights and no system-wide Python changes.
+- `setup.ps1 -InstallBench` runs that install as part of a scripted setup.
+- The status app gains a **Benchmark** button: it offers to install the missing
+  environment and then shows the measured TFLOPS.
+- `app\Install-App.ps1` now ships `bench.ps1` and `benchmark\` with the app, so
+  the button works from the installed copy.
+
+### Changed
+- The benchmark's requirements are documented instead of implied: Python
+  3.10-3.15 plus a multi-GB CUDA wheel, and explicitly nothing for the unlock or
+  the status app. The old claim that setup downloads no extra runtimes was true
+  and is now the actual behaviour plus a documented opt-in.
+
 ## [2.2.3] - 2026-11-07
 
 ### Fixed

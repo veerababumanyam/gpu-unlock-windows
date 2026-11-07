@@ -54,7 +54,7 @@ applied from the detected hardware and Windows version.
 | Markers | Writes the 5-second unattended marker and quiet-console marker |
 | Windows app | Installs to `%ProgramFiles%\GPU Unlock`, creates Desktop/Start Menu shortcuts, an uninstall shortcut, and the `GpuUnlockStatus` logon task |
 | Registry | Records the install path, version, auto-start and cache settings under `HKCU\SOFTWARE\GpuUnlock`; registers the Apps & Features uninstall entry |
-| Dependencies | No extra runtimes are downloaded on Windows 10/11; the wizard verifies the built-in components and stops with a clear message if one is missing |
+| Dependencies | The unlock and the status app need only built-in Windows components; the wizard verifies them and stops with a clear message if one is missing. The benchmark's PyTorch is the one optional extra and is never downloaded silently: use **Benchmark** in the status app, `.\bench.ps1 -Install`, or `setup.ps1 -InstallBench` |
 
 ## Requirements
 
@@ -67,6 +67,9 @@ applied from the detected hardware and Windows version.
   format it.
 - Internet access for the first download (release and upstream assets).
 - Administrator rights (the wizard requests them).
+- **Optional, benchmark only:** Python 3.10-3.15 and a multi-GB download for the
+  CUDA PyTorch wheel (`.\bench.ps1 -Install`). Nothing else in this tool needs
+  Python, and the unlock works without it.
 - If **BitLocker** is enabled, keep the recovery key before changing boot
   settings. The wizard warns but does not disable BitLocker.
 
@@ -117,10 +120,10 @@ Open **GPU Unlock** from the Desktop or Start Menu. The app shows:
 - `SS0` and `SS1`
 - the raw `ssdiag` output
 
-The app has **Check again**, **Repair selectors** (`ssdiag --reapply`), **Open
-guide** (the printable PDF) and **Open log** buttons. The log is
-`%LOCALAPPDATA%\gpu-unlock-windows\status.log` and rotates automatically (five
-files, 5 MB each).
+The app has **Check again**, **Repair selectors** (`ssdiag --reapply`),
+**Benchmark**, **Open guide** (the printable PDF) and **Open log** buttons. The
+log is `%LOCALAPPDATA%\gpu-unlock-windows\status.log` and rotates automatically
+(five files, 5 MB each).
 
 Command line check (elevated PowerShell):
 
@@ -130,6 +133,25 @@ Command line check (elevated PowerShell):
 
 Expected when active: `SS0 = 0x88888888`, `SS1` low nibble `0x8`, from the
 cluster of the detected family (`ampere/ada` on RTX 40/30, `turing` on RTX 20).
+
+## Benchmark (proof of the speedup)
+
+`ssdiag` proves the selectors are live; the benchmark proves the tensor rate
+actually moved. It is the only part of this project that needs Python, so it is
+installed explicitly rather than pulled in by the setup:
+
+```powershell
+.\bench.ps1 -Install     # creates %LOCALAPPDATA%\gpu-unlock-windows\bench\.venv
+                         # and installs the CUDA PyTorch wheel (multi-GB, no admin)
+.\bench.ps1 -Status      # what is installed
+.\bench.ps1              # BF16 GEMM, FP32 accumulate -> TFLOPS
+```
+
+The status app's **Benchmark** button runs the same script and offers to install
+the environment when it is missing. `setup.ps1 -InstallBench` does the install as
+part of a scripted setup. The wheel comes from the CUDA index pinned in
+`bench.ps1` (`cu130` by default), so the result is a real GPU measurement, not a
+CPU fallback. Uninstalling removes the environment with the rest of the cache.
 
 ## Uninstall
 
@@ -194,6 +216,14 @@ The wizard is the recommended path. The underlying scripts remain available:
 # Install the Windows app only
 .\setup.ps1 -InstallApp
 
+# Install the app and the optional PyTorch benchmark environment
+.\setup.ps1 -InstallApp -InstallBench
+
+# Benchmark environment / measurement
+.\bench.ps1 -Install
+.\bench.ps1 -Status
+.\bench.ps1
+
 # Dry run / WhatIf (no download or copy)
 .\setup.ps1 -DryRun
 .\setup.ps1 -WhatIf
@@ -204,8 +234,8 @@ The wizard is the recommended path. The underlying scripts remain available:
 
 Useful `setup.ps1` switches: `-Family ad102|ga102|tu10x|all|localhost`,
 `-Stick E:`, `-FormatStick -ConfirmFormat`, `-Interactive:$false`, `-Cache`,
-`-InstallApp`, `-InstallStick`, `-NoApp`, `-NoStick`, `-NoDesktop`,
-`-NoStartMenu`, `-NoAutoStart`, `-Silent`, `-SkipElevation`.
+`-InstallApp`, `-InstallBench`, `-InstallStick`, `-NoApp`, `-NoStick`,
+`-NoDesktop`, `-NoStartMenu`, `-NoAutoStart`, `-Silent`, `-SkipElevation`.
 
 ## Files
 
@@ -221,6 +251,7 @@ Useful `setup.ps1` switches: `-Family ad102|ga102|tu10x|all|localhost`,
 | `install.ps1` | USB stick preparation |
 | `Uninstall.ps1` | CLI uninstaller |
 | `verify.ps1` | CLI verification with `ssdiag` |
+| `bench.ps1` | Installs the optional PyTorch benchmark environment and runs the BF16 GEMM |
 | `Unlock/` | PowerShell module (`Unlock.psd1` + focused submodules) |
 | `tests/run-tests.ps1` | Dependency-free regression suite |
 | `tests/parse-all.ps1` | Syntax check for every PowerShell file |

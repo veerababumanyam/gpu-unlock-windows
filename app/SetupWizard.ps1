@@ -15,7 +15,7 @@ if (Test-Path -LiteralPath $versionPath) {
     $version = (Get-Content -LiteralPath $versionPath -Raw).Trim()
 }
 else {
-    $version = '2.2.3'
+    $version = '2.2.4'
 }
 
 function Test-IsAdmin {
@@ -345,7 +345,7 @@ $chkAutoStart.Size = New-Object System.Drawing.Size(660, 24)
 $chkAutoStart.Checked = $true
 $pageOptions.Controls.Add($chkAutoStart)
 
-$pageOptions.Controls.Add((New-WizardLabel -Text 'Setup runs elevated, installs no extra runtimes on Windows 10/11, and applies the shortcuts, scheduled task and registry settings automatically.' -X 28 -Y 392 -Width 700 -Height 52 -Color $muted))
+$pageOptions.Controls.Add((New-WizardLabel -Text 'Setup runs elevated and installs no extra runtimes by default (the benchmark''s PyTorch is opt-in). Shortcuts, the scheduled task and registry settings are applied automatically.' -X 28 -Y 392 -Width 700 -Height 52 -Color $muted))
 
 # Page 4: progress
 $pageProgress = New-WizardPage

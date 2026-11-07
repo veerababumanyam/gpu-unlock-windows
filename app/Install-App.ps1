@@ -192,7 +192,7 @@ function Install-Files {
     try {
         if (-not (Test-Path $InstallDir)) { New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null }
         
-        $files = @('unlock.config.json', 'verify.ps1', 'TROUBLESHOOTING.md', 'README.md',
+        $files = @('unlock.config.json', 'verify.ps1', 'bench.ps1', 'TROUBLESHOOTING.md', 'README.md',
                    'LICENSE', 'THIRD-PARTY-NOTICES.md', 'VERSION')
         foreach ($f in $files) {
             $src = Join-Path $repo $f
@@ -225,6 +225,14 @@ function Install-Files {
             if (Test-Path $modDst) { Remove-Item -Recurse -Force -Path $modDst }
             Copy-Item -LiteralPath $modSrc -Destination $modDst -Recurse -Force -ErrorAction Stop
             Write-Log "Installed Unlock module folder"
+        }
+
+        $benchSrc = Join-Path $repo 'benchmark'
+        $benchDst = Join-Path $InstallDir 'benchmark'
+        if (Test-Path $benchSrc) {
+            if (Test-Path $benchDst) { Remove-Item -Recurse -Force -Path $benchDst }
+            Copy-Item -LiteralPath $benchSrc -Destination $benchDst -Recurse -Force -ErrorAction Stop
+            Write-Log "Installed benchmark folder"
         }
         
         Write-Log "Application files installed to: $InstallDir"

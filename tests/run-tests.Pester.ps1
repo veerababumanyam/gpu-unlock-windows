@@ -99,6 +99,22 @@ VERDICT [ada]: NOT_UNLOCKED
     }
 }
 
+Describe "Benchmark wiring" {
+    BeforeAll {
+        $script:root = Split-Path -Parent $PSScriptRoot
+    }
+
+    It "ships bench.ps1 and the benchmark script" {
+        (Test-Path -LiteralPath (Join-Path $script:root 'bench.ps1')) | Should -Be $true
+        (Test-Path -LiteralPath (Join-Path $script:root 'benchmark\bench.py')) | Should -Be $true
+    }
+
+    It "setup exposes the opt-in install switch" {
+        $setup = Get-Content -LiteralPath (Join-Path $script:root 'setup.ps1') -Raw
+        $setup -match '\[switch\]\$InstallBench' | Should -Be $true
+    }
+}
+
 Describe "Set-UnlockMarkers" {
     It "writes markers with correct values" {
         $mtmp = Join-Path $env:TEMP ('gpu-unlock-markers-' + [guid]::NewGuid().ToString('N'))

@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [switch]$InstallApp,
+    [switch]$InstallBench,
     [switch]$InstallStick,
     [switch]$Uninstall,
     [string]$InstallDir,
@@ -44,7 +45,7 @@ function Test-IsAdmin {
 
 if (-not (Test-IsAdmin) -and -not $SkipElevation) {
     $forward = @()
-    foreach ($name in @('InstallApp','InstallStick','Uninstall','Silent','Force','Manual','NoApp',
+    foreach ($name in @('InstallApp','InstallBench','InstallStick','Uninstall','Silent','Force','Manual','NoApp',
                         'FormatStick','ConfirmFormat','Interactive','DryRun','WhatIf','SkipMaker',
                         'NoStick','NoAutoStart','NoDesktop','NoStartMenu')) {
         if ((Get-Variable -Name $name -ValueOnly -ErrorAction SilentlyContinue)) { $forward += "-$name" }
@@ -155,6 +156,21 @@ if ($InstallApp -and -not $NoApp -and -not $DryRun -and -not $WhatIf -and $exitC
     }
 }
 
+if ($InstallBench -and $exitCode -eq 0 -and -not $DryRun -and -not $WhatIf) {
+    Write-Host ""
+    Write-Host "Benchmark support: PyTorch for the TFLOPS check (multi-GB download)" -ForegroundColor Cyan
+    Write-Host "-------------------------------------------------------------------" -ForegroundColor Gray
+    try {
+        & (Join-Path $repo 'bench.ps1') -Install -NonInteractive
+        if ($LASTEXITCODE -ne 0) { throw "bench.ps1 failed (exit $LASTEXITCODE)." }
+        Write-Host "Benchmark support installed successfully!" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Benchmark installation failed: $($_.Exception.Message)" -ForegroundColor Red
+        $exitCode = 1
+    }
+}
+
 Write-Host ""
 if ($exitCode -eq 0) {
     if ($DryRun -or $WhatIf) {
@@ -175,6 +191,12 @@ if ($exitCode -eq 0) {
             Write-Host "Status app: 'GPU Unlock' in Start Menu / Desktop" -ForegroundColor Gray
             if (-not $NoAutoStart) {
                 Write-Host "Auto-check: Runs at every logon (15s delay)" -ForegroundColor Gray
+            }
+            if ($InstallBench) {
+                Write-Host "Benchmark: .\bench.ps1  (BF16 GEMM TFLOPS)" -ForegroundColor Gray
+            }
+            else {
+                Write-Host "Benchmark support not installed; run setup.ps1 -InstallBench or bench.ps1 -Install" -ForegroundColor Gray
             }
         }
     }

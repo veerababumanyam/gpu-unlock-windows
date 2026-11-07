@@ -147,31 +147,37 @@ $details.Anchor = 'Top, Bottom, Left, Right'
 $btnCheck = New-Object System.Windows.Forms.Button
 $btnCheck.Text = 'Check again'
 $btnCheck.Location = New-Object System.Drawing.Point(16, 446)
-$btnCheck.Size = New-Object System.Drawing.Size(110, 32)
+$btnCheck.Size = New-Object System.Drawing.Size(104, 32)
 $btnCheck.Anchor = 'Bottom, Left'
 
 $btnRepair = New-Object System.Windows.Forms.Button
 $btnRepair.Text = 'Repair selectors'
-$btnRepair.Location = New-Object System.Drawing.Point(134, 446)
-$btnRepair.Size = New-Object System.Drawing.Size(120, 32)
+$btnRepair.Location = New-Object System.Drawing.Point(124, 446)
+$btnRepair.Size = New-Object System.Drawing.Size(116, 32)
 $btnRepair.Anchor = 'Bottom, Left'
+
+$btnBench = New-Object System.Windows.Forms.Button
+$btnBench.Text = 'Benchmark'
+$btnBench.Location = New-Object System.Drawing.Point(244, 446)
+$btnBench.Size = New-Object System.Drawing.Size(100, 32)
+$btnBench.Anchor = 'Bottom, Left'
 
 $btnGuide = New-Object System.Windows.Forms.Button
 $btnGuide.Text = 'Open guide'
-$btnGuide.Location = New-Object System.Drawing.Point(262, 446)
-$btnGuide.Size = New-Object System.Drawing.Size(100, 32)
+$btnGuide.Location = New-Object System.Drawing.Point(348, 446)
+$btnGuide.Size = New-Object System.Drawing.Size(92, 32)
 $btnGuide.Anchor = 'Bottom, Left'
 
 $btnLog = New-Object System.Windows.Forms.Button
 $btnLog.Text = 'Open log'
-$btnLog.Location = New-Object System.Drawing.Point(370, 446)
-$btnLog.Size = New-Object System.Drawing.Size(100, 32)
+$btnLog.Location = New-Object System.Drawing.Point(444, 446)
+$btnLog.Size = New-Object System.Drawing.Size(84, 32)
 $btnLog.Anchor = 'Bottom, Left'
 
 $btnClose = New-Object System.Windows.Forms.Button
 $btnClose.Text = 'Close'
-$btnClose.Location = New-Object System.Drawing.Point(506, 446)
-$btnClose.Size = New-Object System.Drawing.Size(100, 32)
+$btnClose.Location = New-Object System.Drawing.Point(532, 446)
+$btnClose.Size = New-Object System.Drawing.Size(92, 32)
 $btnClose.Anchor = 'Bottom, Right'
 $btnClose.DialogResult = 'Cancel'
 
@@ -181,6 +187,21 @@ $btnRepair.Add_Click({
     [void][System.Windows.Forms.MessageBox]::Show(
         ("Repair attempted.`n`nSS0={0}  SS1={1}" -f $r.Ss0, $r.Ss1), 'GPU Unlock', 'OK', 'Information')
     Update-Ui
+})
+$btnBench.Add_Click({
+    $benchScript = Join-Path $repoRoot 'bench.ps1'
+    if (-not (Test-Path -LiteralPath $benchScript)) {
+        [void][System.Windows.Forms.MessageBox]::Show(
+            "bench.ps1 was not found in the install folder. Re-run SETUP.cmd -InstallApp.", 'GPU Unlock', 'OK', 'Information')
+        return
+    }
+    # Installing the benchmark environment is a multi-GB download and running a
+    # warm-up takes a while, so give it a console the user can watch instead of
+    # freezing this window. bench.ps1 offers to install what is missing.
+    Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-NoExit',
+        '-File', ('"' + $benchScript + '"')
+    ) -WorkingDirectory $repoRoot
 })
 $btnGuide.Add_Click({
     $guide = Join-Path $repoRoot 'docs\GPU-Unlock-Guide.pdf'
@@ -195,7 +216,7 @@ $btnLog.Add_Click({
 })
 $btnClose.Add_Click({ $form.Close() })
 
-$form.Controls.AddRange(@($label, $hint, $details, $btnCheck, $btnRepair, $btnGuide, $btnLog, $btnClose))
+$form.Controls.AddRange(@($label, $hint, $details, $btnCheck, $btnRepair, $btnBench, $btnGuide, $btnLog, $btnClose))
 $form.AcceptButton = $btnCheck
 $form.CancelButton = $btnClose
 

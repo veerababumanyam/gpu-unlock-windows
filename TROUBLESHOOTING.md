@@ -15,6 +15,9 @@ reproducible field reports, not guesses.
 | Gate open but SS values wrong | Selectors reverted | `ssdiag --reapply` (writes SS0/SS1 only behind an open gate; does not write PLM). |
 | Status app says `NOT UNLOCKED` while the dump contains `VERDICT [ada]: UNLOCKED` | Older builds parsed the first `SS0 =` in the dump, which belongs to the other family's register window and answers `0xbadf5040` there | Update to 2.2.3+ and re-run `SETUP.cmd -InstallApp`. `0xbadf5040` is `PRIV_VIOLATION` - the die refused the read; on the non-native window it is expected, not a lock state. |
 | Unlocked but no speedup | Power wall, quantized path, or workload not using FP32-accumulate tensor | Verify SS0/SS1 first. BF16/FP16/TF32 with FP32 accumulate move; INT8/INT4/FP32 and decode-bound workloads do not. |
+| Benchmark says PyTorch is not installed | The benchmark environment is opt-in and multi-GB, so setup never downloads it silently | Run `.\bench.ps1 -Install`, or click **Benchmark** in the status app and answer `y`. The unlock and the status app do not need it. |
+| `bench.ps1` finds no supported Python | PyTorch needs CPython 3.10-3.15 | Install Python from python.org, or pass `-Python C:\path\python.exe`. 3.16+ has no wheels yet. |
+| Torch installed but `torch.cuda.is_available()` is False | CPU-only wheel, or driver older than the CUDA runtime in the wheel | `.\bench.ps1 -Status` prints the runtime; reinstall with `.\bench.ps1 -Install` (CUDA index pinned in the script) and update the NVIDIA driver. |
 | Unlock gone after sleep or power loss | Volatile register state | Expected. Replay the stick. |
 | Board powers off at image handoff | Board-specific chain failure | #128 (ASUS B760M) is closed by v2.1.10; update and retry. If it persists, archive `loader.log` and report upstream with board/BIOS. |
 | SETUP.cmd says "Multiple removable volumes" | More than one USB drive inserted | Remove extra drives, or run with `-Interactive` to pick the correct one. |

@@ -275,6 +275,21 @@ $formatIndex = $stagingText.IndexOf('Format-Volume')
 Assert-UnlockTest ($checkIndex -gt 0 -and $checkIndex -lt $backupIndex -and $backupIndex -lt $formatIndex) 'stick validates staging and backs up EFI before formatting'
 Assert-UnlockTest ($stagingText -match 'gsp-gate\.txt') 'stick copy includes the Turing gate record when present'
 
+# Benchmark support: opt-in install, shipped with the app, reachable from the UI.
+$benchPath = Join-Path $repoRoot 'bench.ps1'
+Assert-UnlockTest (Test-Path -LiteralPath $benchPath) 'bench.ps1 ships at the repo root'
+
+$setupText = Get-Content -LiteralPath (Join-Path $repoRoot 'setup.ps1') -Raw
+Assert-UnlockTest ($setupText -match '\[switch\]\$InstallBench') 'setup.ps1 exposes -InstallBench'
+Assert-UnlockTest ($setupText -match 'bench\.ps1') 'setup.ps1 delegates the benchmark install to bench.ps1'
+
+$installAppText = Get-Content -LiteralPath $installAppPath -Raw
+Assert-UnlockTest (($installAppText -match "'bench\.ps1'") -and ($installAppText -match 'benchmark')) 'installer copies bench.ps1 and the benchmark folder'
+Assert-UnlockTest (($statusAppText -match 'Benchmark') -and ($statusAppText -match 'bench\.ps1')) 'status app exposes a Benchmark button wired to bench.ps1'
+
+$benchText = Get-Content -LiteralPath $benchPath -Raw
+Assert-UnlockTest (($benchText -match 'torch\.cuda\.is_available') -and ($benchText -match 'download\.pytorch\.org')) 'bench.ps1 installs CUDA torch and refuses a CPU-only result'
+
 # The public module must export its manifest API and remove it again cleanly.
 $manifestFunctions = @($manifestData.FunctionsToExport)
 $unlockModule = Get-Module -Name Unlock

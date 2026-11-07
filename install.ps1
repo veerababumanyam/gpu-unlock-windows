@@ -1,14 +1,17 @@
 [CmdletBinding()]
 param(
     [string]$Stick,
-    [ValidateSet('localhost', 'ad102', 'ga102', 'tu10x', 'all')]
-    [string]$Family = 'localhost',
+    [ValidateSet('all', 'localhost', 'ad102', 'ga102', 'tu10x')]
+    [string]$Family = 'all',
     [string]$Cache = (Join-Path $env:LOCALAPPDATA 'gpu-unlock-windows'),
     [string]$InputsDir,
     [switch]$SkipMaker,
     [switch]$NoStick,
     [switch]$FormatStick,
     [switch]$ConfirmFormat,
+    [switch]$Manual,
+    [ValidateRange(1, 30)]
+    [int]$Countdown = 5,
     [switch]$DryRun
 )
 $ErrorActionPreference = 'Stop'
@@ -63,7 +66,11 @@ $install = Install-UnlockStick -Staging $staging -Family $Family -DriveLetter $S
     -FormatStick:$FormatStick -ConfirmFormat:$ConfirmFormat -BackupRoot $backup
 if (-not $install.Ok) { throw ('Stick verification failed for: ' + ($install.Bad -join ', ')) }
 
+$markers = Set-UnlockMarkers -Root $install.Root -Unattended:(-not $Manual) -Quiet:(-not $Manual) -Countdown $Countdown
+
 Write-Host "Stick ready: $($install.Root) (hashes verified)" -ForegroundColor Green
+Write-Host ("Unattended run: {0} (countdown {1}s); quiet console: {2}" -f $markers.AutoRun, $markers.Countdown, $markers.Quiet) -ForegroundColor Green
 Write-Host ''
-Write-Host 'Next: Restart -> F12 -> UEFI: <stick> -> Space/Enter.' -ForegroundColor Cyan
-Write-Host 'Then run (elevated): .\verify.ps1' -ForegroundColor Cyan
+Write-Host 'One-time BIOS step: set the stick (UEFI: ...) first in the boot order.' -ForegroundColor Cyan
+Write-Host 'Then every restart with the stick connected runs the unlock automatically.' -ForegroundColor Cyan
+Write-Host 'Without the stick, Windows boots normally.' -ForegroundColor Cyan

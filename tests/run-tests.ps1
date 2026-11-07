@@ -34,6 +34,22 @@ $lower = "ss0: 0x88888888`nss1: 0x0000008"
 $r = ConvertFrom-SsdiagOutput -Text $lower
 Assert-UnlockTest ($r.Ok) 'ssdiag parser is case-insensitive'
 
+$partial = "SS0 = 0x88888888"
+$r = ConvertFrom-SsdiagOutput -Text $partial
+Assert-UnlockTest (-not $r.Ok) 'ssdiag without SS1 does not pass'
+
+$mtmp = Join-Path $env:TEMP ('gpu-unlock-markers-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Force -Path $mtmp | Out-Null
+try {
+    $m = Set-UnlockMarkers -Root $mtmp -Unattended -Quiet -Countdown 7
+    Assert-UnlockTest ($m.AutoRun -and $m.Quiet -and $m.Countdown -eq 7) 'markers written'
+    $m = Set-UnlockMarkers -Root $mtmp
+    Assert-UnlockTest ((-not $m.AutoRun) -and (-not $m.Quiet)) 'markers removed'
+}
+finally {
+    Remove-Item -LiteralPath $mtmp -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 $tmp = Join-Path $env:TEMP ('gpu-unlock-test-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
@@ -48,6 +64,9 @@ try {
 
     $r = Test-UnlockStaging -Root $tmp -Family ad102
     Assert-UnlockTest ($r.Ok) 'complete staging is accepted'
+
+    $all = Test-UnlockStaging -Root $tmp -Family all
+    Assert-UnlockTest (@($all.Expected).Count -eq 21) 'all-family staging expects 21 unique files'
 }
 finally {
     Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue

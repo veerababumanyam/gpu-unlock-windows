@@ -184,7 +184,7 @@ function Test-UnlockStaging {
     )
     $cfg = Get-UnlockConfig
     if ($Family -eq 'all') {
-        $expected = @($cfg.expectedFiles.ad102) + @($cfg.expectedFiles.ga102) + @($cfg.expectedFiles.tu10x) + @($cfg.efiPath)
+        $expected = @( (@($cfg.expectedFiles.ad102) + @($cfg.expectedFiles.ga102) + @($cfg.expectedFiles.tu10x) + @($cfg.efiPath)) | Select-Object -Unique )
     }
     else {
         $expected = @($cfg.expectedFiles.$Family) + @($cfg.efiPath)
@@ -196,6 +196,39 @@ function Test-UnlockStaging {
         if (-not (Test-Path -LiteralPath $p)) { $missing += $rel }
     }
     [pscustomobject]@{ Ok = ($missing.Count -eq 0); Missing = $missing; Expected = $expected }
+}
+
+function Set-UnlockMarkers {
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [switch]$Unattended,
+        [switch]$Quiet,
+        [int]$Countdown = 5
+    )
+    $autoPath = Join-Path $Root 'i_know_what_i_am_doing.txt'
+    $quietPath = Join-Path $Root 'tx-quiet.txt'
+
+    if ($Unattended) {
+        if ($Countdown -lt 1 -or $Countdown -gt 30) { throw 'Countdown must be between 1 and 30.' }
+        Set-Content -LiteralPath $autoPath -Value ([string]$Countdown) -Encoding Ascii -Force
+    }
+    elseif (Test-Path -LiteralPath $autoPath) {
+        Remove-Item -LiteralPath $autoPath -Force
+    }
+
+    if ($Quiet) {
+        New-Item -ItemType File -Path $quietPath -Force | Out-Null
+    }
+    elseif (Test-Path -LiteralPath $quietPath) {
+        Remove-Item -LiteralPath $quietPath -Force
+    }
+
+    $autoOn = Test-Path -LiteralPath $autoPath
+    [pscustomobject]@{
+        AutoRun   = $autoOn
+        Quiet     = (Test-Path -LiteralPath $quietPath)
+        Countdown = $(if ($autoOn) { [int]((Get-Content -LiteralPath $autoPath -Raw).Trim()) } else { 0 })
+    }
 }
 
 function Get-UnlockStick {
@@ -280,25 +313,26 @@ function ConvertFrom-SsdiagOutput {
     $ss1 = [regex]::Match($Text, '(?i)SS1\s*[=:]\s*(0x[0-9a-f]+)').Groups[1].Value
 
     $ok = $false
-    if ($ss0) {
+    if ($ss0 -and $ss1) {
         $target = [Convert]::ToUInt32('88888888', 16)
-        $ok = ([Convert]::ToUInt32($ss0.Substring(2), 16) -eq $target)
-        if ($ok -and $ss1) {
-            $ok = (([Convert]::ToUInt32($ss1.Substring(2), 16) -band 0xF) -eq 0x8)
-        }
+        $ok = ([Convert]::ToUInt32($ss0.Substring(2), 16) -eq $target) -and
+              (([Convert]::ToUInt32($ss1.Substring(2), 16) -band 0xF) -eq 0x8)
     }
     [pscustomobject]@{ Ok = $ok; Ss0 = $ss0; Ss1 = $ss1; Raw = $Text }
 }
 
 function Invoke-UnlockSsdiag {
-    param([Parameter(Mandatory)][string]$SsdiagPath)
+    param(
+        [Parameter(Mandatory)][string]$SsdiagPath,
+        [string[]]$Arguments = @()
+    )
 
     $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
     if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         throw 'ssdiag requires an elevated PowerShell (Run as administrator).'
     }
 
-    $text = (& $SsdiagPath 2>&1 | Out-String)
+    $text = (& $SsdiagPath @Arguments 2>&1 | Out-String)
     ConvertFrom-SsdiagOutput -Text $text
 }
 

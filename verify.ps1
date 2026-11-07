@@ -4,17 +4,16 @@ param(
     [switch]$Elevate
 )
 $ErrorActionPreference = 'Stop'
-Import-Module (Join-Path $PSScriptRoot 'Unlock.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'Unlock\Unlock.psm1') -Force -DisableNameChecking
 
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if (-not $isAdmin) {
     if ($Elevate) {
-        $cmd = "& '$PSCommandPath' -Cache '$Cache'"
-        Start-Process -FilePath 'powershell.exe' `
-            -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $cmd `
-            -Verb RunAs
+        $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $PSCommandPath + '"'),
+                     '-Cache', ('"' + $Cache + '"'))
+        Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -Verb RunAs | Out-Null
         return
     }
     Write-Host 'ssdiag needs an elevated PowerShell.' -ForegroundColor Red
@@ -28,9 +27,9 @@ if (-not (Test-Path -LiteralPath $ssdiag)) {
 }
 
 $result = Invoke-UnlockSsdiag -SsdiagPath $ssdiag
-Write-Host $result.Raw
-Write-Host ''
-Write-Host ("SS0={0}  SS1={1}" -f $result.Ss0, $result.Ss1)
+Write-Output $result.Raw
+Write-Output ''
+Write-Output ("SS0={0}  SS1={1}" -f $result.Ss0, $result.Ss1)
 if ($result.Ok) {
     Write-Host 'PASS: tensor overrides are effective.' -ForegroundColor Green
     exit 0

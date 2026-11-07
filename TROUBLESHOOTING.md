@@ -16,6 +16,21 @@ reproducible field reports, not guesses.
 | Unlocked but no speedup | Power wall, quantized path, or workload not using FP32-accumulate tensor | Verify SS0/SS1 first. BF16/FP16/TF32 with FP32 accumulate move; INT8/INT4/FP32 and decode-bound workloads do not. |
 | Unlock gone after sleep or power loss | Volatile register state | Expected. Replay the stick. |
 | Board powers off at image handoff | Board-specific chain failure | #128 (ASUS B760M) is closed by v2.1.10; update and retry. If it persists, archive `loader.log` and report upstream with board/BIOS. |
+| SETUP.cmd says "Multiple removable volumes" | More than one USB drive inserted | Remove extra drives, or run with `-Interactive` to pick the correct one. |
+| SETUP.cmd refuses to format stick | Stick is not FAT32 and `-FormatStick -ConfirmFormat` not passed | Re-run with `-FormatStick -ConfirmFormat` to auto-format, or use `-Interactive` to confirm interactively. |
+| "GPU Unlock" not in Start Menu | Install-App.ps1 failed or was skipped | Run `SETUP.cmd -InstallApp` as Administrator |
+| Scheduled task not running | Task Scheduler disabled or permissions | Check Task Scheduler > Task Scheduler Library > GpuUnlockStatus |
+| ssdiag.exe not found | App not installed or install incomplete | Run `SETUP.cmd -InstallApp` as Administrator |
+| Uninstaller not in Apps & Features | Install-App.ps1 didn't run elevated | Re-run `SETUP.cmd -InstallApp` as Administrator |
+
+## Windows Application Issues
+
+| Symptom | Likely cause | Action |
+| --- | --- | --- |
+| Status window won't open | .NET Framework / PowerShell issue | Install .NET 4.7.2+ (built into Win10/11) |
+| "Not elevated" in log | Scheduled task lost highest privilege | Re-run `SETUP.cmd -InstallApp` as Administrator |
+| Log file growing large | Rotation keeps five files of up to 5 MB | Check `%LOCALAPPDATA%\gpu-unlock-windows\status.log`; delete old `.1`–`.5` files if needed |
+| Uninstaller doesn't remove all files | Files in use or permissions | Close GPU Unlock window, run `SETUP.cmd -Uninstall` as Admin |
 
 ## Persistent boot without a USB stick (expert)
 

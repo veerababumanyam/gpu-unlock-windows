@@ -8,7 +8,7 @@ Windows boots normally.
 ## For non-technical users
 
 1. Double-click **`SETUP.cmd`**.
-2. Approve the Windows prompt (it installs the status app).
+2. Approve the Windows prompt (it installs the status app + USB stick prep).
 3. Do the one-time BIOS step in [docs/BIOS-SETUP.md](docs/BIOS-SETUP.md):
    set the stick (`UEFI: ...`) first in the boot order.
 4. Restart with the stick connected. That's it.
@@ -17,7 +17,7 @@ From then on:
 
 - **Stick in + restart** → automatic unlock → Windows starts.
 - **Stick out** → normal Windows, no unlock.
-- **GPU Unlock Status** (Desktop / Start Menu) shows a green **UNLOCKED** or a
+- **GPU Unlock** (Desktop / Start Menu) shows a green **UNLOCKED** or a
   red **NOT UNLOCKED** with what to do. At every login a background check warns
   you only if something is wrong.
 
@@ -36,12 +36,20 @@ and automates everything around it.
 | Preflight | UEFI, Secure Boot off, Fast Startup, BitLocker, GPU/BDF |
 | Download | Pinned release v2.1.10, every file hash-verified against `SHA256SUMS.txt` |
 | Assets | Builds **all supported families** (`ad102` RTX 40, `ga102` RTX 30, `tu10x` RTX 20) onto one stick |
-| Stick | FAT32 check, backup of existing `EFI/BOOT/BOOTX64.EFI`, copy + SHA-256 verify |
+| Stick | **Auto-detects file system; formats to FAT32 if needed (with confirmation)**; backup of existing `EFI/BOOT/BOOTX64.EFI`, copy + SHA-256 verify |
 | Automation | `i_know_what_i_am_doing.txt` (5 s auto-run, any key aborts) + `tx-quiet.txt` |
-| App | Desktop/Start Menu shortcut + elevated logon check (task `GpuUnlockStatus`) |
+| App | Desktop/Start Menu shortcut + elevated logon check (task `GpuUnlockStatus`) + uninstaller in Apps & Features |
 
-Useful switches: `-Stick F:`, `-Family all|ad102|ga102|tu10x`, `-Manual`
-(no auto-run), `-Countdown N`, `-NoApp`.
+Useful switches:
+```
+SETUP.cmd -Interactive          # Prompt for drive selection & format (default)
+SETUP.cmd -Stick E:             # Use specific drive, still interactive
+SETUP.cmd -FormatStick -ConfirmFormat -Stick E:  # Fully non-interactive
+SETUP.cmd -Uninstall            # Complete removal
+SETUP.cmd -InstallApp -InstallStick  # Install both (default)
+SETUP.cmd -InstallApp           # Install only Windows app
+SETUP.cmd -InstallStick         # Prepare only USB stick
+```
 
 ## Supported hardware
 
@@ -62,14 +70,17 @@ routed by the loader at runtime. GTX 16 is experimental upstream and not in the
 
 | Path | Purpose |
 | --- | --- |
-| `SETUP.cmd` | Double-click entry point |
-| `setup.ps1` | Orchestrates stick + app install |
-| `install.ps1` | Stick preparation |
-| `Unlock.psm1` | Tested logic |
+| `SETUP.cmd` | Double-click entry point (self-elevates) |
+| `setup.ps1` | Main setup orchestrator (USB + App) |
+| `install.ps1` | USB stick preparation |
+| `Unlock\` | PowerShell module (`Unlock.psd1` + functional submodules) |
+| `Uninstall.ps1` | Complete uninstaller |
 | `verify.ps1` | CLI check |
 | `app/GpuUnlock.ps1` | Status window / logon check |
-| `app/Install-App.ps1` | Shortcuts + scheduled task (`-Remove` uninstalls) |
-| `tests/run-tests.ps1` | 15 assertions |
+| `app/Install-App.ps1` | Full Windows installer (shortcuts, task, registry, uninstaller) |
+| `tests/run-tests.ps1` | Assertion suite (no external dependencies) |
+| `tests/parse-all.ps1` | Syntax check for every PowerShell file |
+| `tests/run-tests.Pester.ps1` | Optional Pester 5+ suite |
 | `TROUBLESHOOTING.md` | Symptom → fix |
 | `docs/BIOS-SETUP.md` | The one-time firmware step |
 

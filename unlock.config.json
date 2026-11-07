@@ -31,5 +31,14 @@
       "sec2_bl_tu10x.bin",
       "v67-tu10x-four-plm.bin"
     ]
+  },
+  "app": {
+    "name": "GPU Unlock",
+    "version": "2.1.0",
+    "publisher": "GPU Unlock Project",
+    "installDir": "%ProgramFiles%\\GPU Unlock",
+    "scheduledTask": "GpuUnlockStatus",
+    "logonDelay": "PT15S",
+    "taskTimeout": "PT10M"
   }
 }

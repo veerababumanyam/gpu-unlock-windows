@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Parse all PowerShell files
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem -Recurse -Filter *.ps1 -File | ForEach-Object {
+            $errs = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errs)
+            if ($errs -and $errs.Count -gt 0) {
+              $failed = $true
+              Write-Host "FAIL: $($_.FullName)"
+              $errs | ForEach-Object { Write-Host "  $($_.Message)" }
+            }
+          }
+          if ($failed) { exit 1 }
+          Write-Host "All PowerShell files parse." -ForegroundColor Green
+
+      - name: Run test suite (PowerShell 7)
+        shell: pwsh
+        run: ./tests/run-tests.ps1
+
+      - name: Run test suite (Windows PowerShell 5.1)
+        shell: powershell
+        run: ./tests/run-tests.ps1

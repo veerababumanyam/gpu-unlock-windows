@@ -9,19 +9,29 @@ param(
     [switch]$NoStick,
     [switch]$FormatStick,
     [switch]$ConfirmFormat,
+    [switch]$Interactive = $true,
     [switch]$Manual,
     [ValidateRange(1, 30)]
     [int]$Countdown = 5,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$WhatIf
 )
 $ErrorActionPreference = 'Stop'
-Import-Module (Join-Path $PSScriptRoot 'Unlock.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'Unlock\Unlock.psm1') -Force
 
-Write-Host ''
-Write-Host '== gpu-unlock for Windows ==' -ForegroundColor Cyan
+Write-Output ''
+Write-Output '== gpu-unlock for Windows =='
 
 $envResult = Test-UnlockEnvironment
-$envResult.Checks | Format-Table Name, Level, Detail -AutoSize | Out-String | Write-Host
+$envResult.Checks | ForEach-Object {
+    $color = switch ($_.Level) {
+        'ok'     { 'Green' }
+        'warn'   { 'Yellow' }
+        'error'  { 'Red' }
+        default  { 'White' }
+    }
+    Write-Host ("  [{0}] {1,-14} {2}" -f $_.Level.ToUpper(), $_.Name, $_.Detail) -ForegroundColor $color
+}
 
 $targets = @(Get-UnlockTargets)
 $targets | Format-Table Index, Name, BusId, Driver -AutoSize | Out-String | Write-Host
@@ -37,19 +47,19 @@ if ($Family -eq 'localhost') {
     Write-Host "Detected family: $Family" -ForegroundColor Green
 }
 
-if ($DryRun) {
-    Write-Host "Dry run OK: preflight passed, family=$Family. No download or copy performed." -ForegroundColor Yellow
+if ($DryRun -or $WhatIf) {
+    Write-Host "Dry run/WhatIf OK: preflight passed, family=$Family. No download or copy performed." -ForegroundColor Yellow
     return
 }
 
-$release = Get-UnlockRelease -Cache $Cache
+$release = Get-UnlockRelease -Cache $Cache -WhatIf:$WhatIf
 Write-Host "Release $($release.Tag) verified: $($release.Dir)" -ForegroundColor Green
 
 $staging = Join-Path $Cache 'usbroot'
 if (-not $SkipMaker) {
     if (-not $InputsDir) { $InputsDir = Join-Path $Cache 'inputs' }
     Write-Host "Generating assets for $Family ..." -ForegroundColor Cyan
-    Invoke-UnlockMaker -Maker $release.Maker -OutDir $staging -WorkDir $InputsDir -Family $Family
+    Invoke-UnlockMaker -Maker $release.Maker -OutDir $staging -WorkDir $InputsDir -Family $Family -WhatIf:$WhatIf
 }
 
 $check = Test-UnlockStaging -Root $staging -Family $Family
@@ -63,12 +73,13 @@ if ($NoStick) {
 
 $backup = Join-Path $Cache 'backup'
 $install = Install-UnlockStick -Staging $staging -Family $Family -DriveLetter $Stick `
-    -FormatStick:$FormatStick -ConfirmFormat:$ConfirmFormat -BackupRoot $backup
+    -FormatStick:$FormatStick -ConfirmFormat:$ConfirmFormat -Interactive:$Interactive -BackupRoot $backup -WhatIf:$WhatIf
 if (-not $install.Ok) { throw ('Stick verification failed for: ' + ($install.Bad -join ', ')) }
 
-$markers = Set-UnlockMarkers -Root $install.Root -Unattended:(-not $Manual) -Quiet:(-not $Manual) -Countdown $Countdown
+$markers = Set-UnlockMarkers -Root $install.Root -Unattended:(-not $Manual) -Quiet:(-not $Manual) -Countdown $Countdown -WhatIf:$WhatIf
 
 Write-Host "Stick ready: $($install.Root) (hashes verified)" -ForegroundColor Green
+if ($install.Formatted) { Write-Host "Stick was formatted to FAT32." -ForegroundColor Green }
 Write-Host ("Unattended run: {0} (countdown {1}s); quiet console: {2}" -f $markers.AutoRun, $markers.Countdown, $markers.Quiet) -ForegroundColor Green
 Write-Host ''
 Write-Host 'One-time BIOS step: set the stick (UEFI: ...) first in the boot order.' -ForegroundColor Cyan

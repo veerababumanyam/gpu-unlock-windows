@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Register-level hardware audit for the local RTX 4080 SUPER:
+  `docs/hardware/RTX-4080-SUPER-HARDWARE-AUDIT.md` and its printable PDF. It
+  records the direct BAR0 reads behind the 16,384 MiB raw / 16,376 MiB usable
+  VRAM split, the 8 MiB VBIOS reserve, the 329 MiB driver reserve, the live
+  tensor selectors, the TPC floorsweep, and the PCIe/BAR/power limits.
+- `docs/build-hardware-audit.py`, the maintainer script that rebuilds the audit
+  PDF from the Markdown report.
+
 ## [2.2.4] - 2026-11-07
 
 ### Added

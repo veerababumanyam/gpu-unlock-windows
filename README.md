@@ -134,6 +134,17 @@ Command line check (elevated PowerShell):
 Expected when active: `SS0 = 0x88888888`, `SS1` low nibble `0x8`, from the
 cluster of the detected family (`ampere/ada` on RTX 40/30, `turing` on RTX 20).
 
+### Register-level hardware audit
+
+The local RTX 4080 SUPER has a full BAR0 audit in
+[`docs/hardware/RTX-4080-SUPER-HARDWARE-AUDIT.md`](docs/hardware/RTX-4080-SUPER-HARDWARE-AUDIT.md)
+([printable PDF](docs/hardware/RTX-4080-SUPER-HARDWARE-AUDIT.pdf)). It covers
+the physical/usable VRAM split, the 8 MiB VBIOS reserve, the 329 MiB driver
+reserve, the live tensor selectors, the TPC floorsweep, and the PCIe/BAR/power
+limits. The headline: **16 GiB physical, 16,376 MiB hardware-usable, 8 MiB
+VBIOS-reserved, 329 MiB driver-reserved, 16,047 MiB application-visible — no
+hidden VRAM to unlock.**
+
 ## Benchmark (proof of the speedup)
 
 `ssdiag` proves the selectors are live; the benchmark proves the tensor rate
@@ -261,6 +272,9 @@ Useful `setup.ps1` switches: `-Family ad102|ga102|tu10x|all|localhost`,
 | `docs/BIOS-SETUP.md` | One-time firmware step |
 | `docs/GPU-Unlock-Guide.pdf` | Printable setup and user guide (opened by the app) |
 | `docs/build-guide.py` | Maintainer script that rebuilds the PDF guide |
+| `docs/hardware/RTX-4080-SUPER-HARDWARE-AUDIT.md` | Register-level VRAM/tensor/lock audit for the local RTX 4080 SUPER |
+| `docs/hardware/RTX-4080-SUPER-HARDWARE-AUDIT.pdf` | Printable version of the hardware audit |
+| `docs/build-hardware-audit.py` | Maintainer script that rebuilds the hardware audit PDF |
 | `TROUBLESHOOTING.md` | Symptom → fix |
 | `LICENSE` | MIT license for this project |
 | `THIRD-PARTY-NOTICES.md` | Upstream GPL-2.0 and NVIDIA terms |

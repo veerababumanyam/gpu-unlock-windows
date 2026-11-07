@@ -1,0 +1,60 @@
+RTX 4080 SUPER hardware snapshot
+Timestamp: 2026-11-07 17:56:02 +01:00
+Host: local workstation (name redacted)
+
+=== nvidia-smi (secondary cross-check) ===
+name, pci.bus_id, vbios_version, pcie.link.gen.max, pcie.link.gen.current, pcie.link.width.max, pcie.link.width.current, memory.total [MiB], memory.reserved [MiB], memory.used [MiB], memory.free [MiB], clocks.current.sm [MHz], clocks.max.sm [MHz], power.draw [W], power.limit [W], power.default_limit [W], temperature.gpu
+NVIDIA GeForce RTX 4080 SUPER, 00000000:04:00.0, 95.03.44.00.4e, 4, 1, 16, 4, 16376 MiB, 329 MiB, 13258 MiB, 2790 MiB, 210 MHz, 3105 MHz, 10.20 W, 320.00 W, 320.00 W, 45
+
+=== PnP ===
+Microsoft PnP Utility
+
+Instance ID:                PCI\VEN_10DE&DEV_2702&SUBSYS_F3041569&REV_A1\4&f4bd703&0&00E4
+Device Description:         NVIDIA GeForce RTX 4080 SUPER
+Class Name:                 Display
+Class GUID:                 {4d36e968-e325-11ce-bfc1-08002be10318}
+Manufacturer Name:          NVIDIA
+Status:                     Started
+Driver Name:                oem71.inf
+
+Instance ID:                PCI\VEN_8086&DEV_A780&SUBSYS_D0001458&REV_04\3&11583659&0&10
+Device Description:         Intel(R) UHD Graphics 770
+Class Name:                 Display
+Class GUID:                 {4d36e968-e325-11ce-bfc1-08002be10318}
+Manufacturer Name:          Intel Corporation
+Status:                     Started
+Driver Name:                oem42.inf
+
+
+=== BAR / link / FEAT / TPC (raw ssdiag) ===
+  BAR0 supported [16M] current 16 MiB (size_idx 4)
+  BAR1 supported [16G/8G/4G/2G/1G/512M/256M/128M/64M] current 256 MiB (size_idx 8)
+  BAR3 supported [32M] current 32 MiB (size_idx 5)
+config-space link caps (bus 4 dev 0 fn 0): LnkCap max Gen4 x16 | LnkSta Gen1 x4 (downgraded) | LnkCap2 [Gen1,Gen2,Gen3,Gen4] | LnkCtl2 TLS Gen4
+FB_SIZE_MIB            = 0x00003ff8
+LOCAL_MEMORY_RANGE     = 0x00000209
+WPR2_LO                = 0x1ffffe00
+WPR2_HI                = 0x00000000
+MMU_LOCK_LO            = 0x1ffffff0
+MMU_LOCK_HI            = 0x00000000
+  LOCAL_MEMORY_RANGE: raw=0x00000209 LOWER_MAG=32 LOWER_SCALE=9 ECC=0 -> 16384 MiB usable
+  turing 0x4096xx      SS0       = 0xbadf5040 [. r4 . r5 ?7* ?5* 1/4* 1/8*]
+  turing 0x4096xx      SS1       = 0xbadf5040 [.]
+  0x823xxx amp/ada/gb  SS0       = 0x88888888 [0* 0* 0* 0* 0* 0* 0* 0*]
+  0x823xxx amp/ada/gb  SS1       = 0x00000008 [0*]
+  0x823xxx amp/ada/gb  READOUT_1 = 0x00000000 [full speed]
+  ada fuse/tpc    OPT_GPC_DISABLE        = 0x00000000
+  ada fuse/tpc    OPT_GPC_DEFECTIVE      = 0x00000000
+  GPC0 CTRL=0x00000000 STATUS=0x00000000 []
+  GPC1 CTRL=0x00000000 STATUS=0x00000000 []
+  GPC2 CTRL=0x00000000 STATUS=0x00000000 []
+  GPC3 CTRL=0x00000000 STATUS=0x00000030 [TPC4 TPC5]
+  GPC4 CTRL=0x00000000 STATUS=0x00000000 []
+  GPC5 CTRL=0x00000000 STATUS=0x00000000 []
+  GPC6 CTRL=0x00000000 STATUS=0x00000000 []
+  GPC7 CTRL=0x00000000 STATUS=0x0000003f [TPC0 TPC1 TPC2 TPC3 TPC4 TPC5]
+  OPT_GPC_DISABLE=0x00000000 (bit per GPC)  OPT_GPC_DEFECTIVE=0x00000000 (bit per GPC)
+  bank B 0x008205c0.. (+4 = OPT_GPC_DEFECTIVE above): 0x00000001 0x00000000 0x00000000 0x00000000 0xbadf5040 0x00000000 0x00000000 0x00000000
+  verdict: 8 TPC(s) fused off in 2 GPC(s), no defect bit on them - override candidates (write path out of scope)
+  OPT_GPC_DISABLE    = 0x00000000
+VERDICT [ada]: UNLOCKED (override values live)

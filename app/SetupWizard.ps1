@@ -23,6 +23,29 @@ function Test-IsAdmin {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function Open-GuideFile {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $false }
+    $candidates = @()
+    if (${env:ProgramFiles(x86)}) {
+        $candidates += (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe')
+    }
+    if ($env:ProgramFiles) {
+        $candidates += (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe')
+    }
+    foreach ($edge in $candidates) {
+        if (Test-Path -LiteralPath $edge) {
+            Start-Process -FilePath $edge -ArgumentList ('"' + $Path + '"') | Out-Null
+            return $true
+        }
+    }
+    try {
+        Start-Process -FilePath $Path -ErrorAction Stop
+        return $true
+    }
+    catch { return $false }
+}
+
 if (-not (Test-IsAdmin) -and -not $Elevated -and -not $Capture -and -not $SelfTest) {
     Add-Type -AssemblyName System.Windows.Forms
     try {
@@ -234,7 +257,9 @@ $btnBiosGuide.Size = New-Object System.Drawing.Size(130, 30)
 $btnBiosGuide.Add_Click({
         $guide = Join-Path $repoRoot 'docs\GPU-Unlock-Guide.pdf'
         if (-not (Test-Path -LiteralPath $guide)) { $guide = Join-Path $repoRoot 'TROUBLESHOOTING.md' }
-        if (Test-Path -LiteralPath $guide) { Start-Process -FilePath $guide }
+        if (-not (Open-GuideFile -Path $guide)) {
+            [void][System.Windows.Forms.MessageBox]::Show('The GPU Unlock guide was not found.', 'GPU Unlock Setup', 'OK', 'Information')
+        }
     })
 $pageSystem.Controls.Add($btnBiosGuide)
 
@@ -365,7 +390,9 @@ $btnOpenGuide.Size = New-Object System.Drawing.Size(110, 32)
 $btnOpenGuide.Add_Click({
         $guide = Join-Path $repoRoot 'docs\GPU-Unlock-Guide.pdf'
         if (-not (Test-Path -LiteralPath $guide)) { $guide = Join-Path $repoRoot 'TROUBLESHOOTING.md' }
-        if (Test-Path -LiteralPath $guide) { Start-Process -FilePath $guide }
+        if (-not (Open-GuideFile -Path $guide)) {
+            [void][System.Windows.Forms.MessageBox]::Show('The GPU Unlock guide was not found.', 'GPU Unlock Setup', 'OK', 'Information')
+        }
     })
 $pageFinish.Controls.Add($btnOpenGuide)
 

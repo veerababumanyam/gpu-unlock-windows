@@ -230,6 +230,7 @@ Assert-UnlockTest $guideOk 'printable PDF guide exists'
 $setupWizardText = Get-Content -LiteralPath (Join-Path $repoRoot 'app\SetupWizard.ps1') -Raw
 $statusAppText = Get-Content -LiteralPath (Join-Path $repoRoot 'app\GpuUnlock.ps1') -Raw
 Assert-UnlockTest (($setupWizardText -match 'GPU-Unlock-Guide\.pdf') -and ($statusAppText -match 'GPU-Unlock-Guide\.pdf')) 'Open guide buttons target the PDF guide'
+Assert-UnlockTest (($setupWizardText -match 'msedge\.exe') -and ($statusAppText -match 'msedge\.exe')) 'PDF guide opens in Edge when no PDF association is registered'
 
 # The public module must export its manifest API and remove it again cleanly.
 $manifestFunctions = @($manifestData.FunctionsToExport)

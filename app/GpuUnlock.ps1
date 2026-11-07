@@ -22,6 +22,29 @@ function Write-Log {
     } catch { }
 }
 
+function Open-GuideFile {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $false }
+    $candidates = @()
+    if (${env:ProgramFiles(x86)}) {
+        $candidates += (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe')
+    }
+    if ($env:ProgramFiles) {
+        $candidates += (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe')
+    }
+    foreach ($edge in $candidates) {
+        if (Test-Path -LiteralPath $edge) {
+            Start-Process -FilePath $edge -ArgumentList ('"' + $Path + '"') | Out-Null
+            return $true
+        }
+    }
+    try {
+        Start-Process -FilePath $Path -ErrorAction Stop
+        return $true
+    }
+    catch { return $false }
+}
+
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
@@ -162,8 +185,9 @@ $btnRepair.Add_Click({
 $btnGuide.Add_Click({
     $guide = Join-Path $repoRoot 'docs\GPU-Unlock-Guide.pdf'
     if (-not (Test-Path -LiteralPath $guide)) { $guide = Join-Path $repoRoot 'TROUBLESHOOTING.md' }
-    if (Test-Path -LiteralPath $guide) { Start-Process $guide }
-    else { [void][System.Windows.Forms.MessageBox]::Show('The GPU Unlock guide was not found in the install folder.', 'GPU Unlock', 'OK', 'Information') }
+    if (-not (Open-GuideFile -Path $guide)) {
+        [void][System.Windows.Forms.MessageBox]::Show('The GPU Unlock guide was not found in the install folder.', 'GPU Unlock', 'OK', 'Information')
+    }
 })
 $btnLog.Add_Click({ 
     if (Test-Path $logPath) { Start-Process $logPath } 

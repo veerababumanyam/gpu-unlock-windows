@@ -210,3 +210,4 @@ if ($script:fail -gt 0) {
 $passed = if ($script:pass -gt 0) { $script:pass } else { 0 }
 Write-Host "Total tests: $($passed + $script:fail), Passed: $passed, Failed: $script:fail" -ForegroundColor Green
 Write-Host 'All tests passed.' -ForegroundColor Green
+exit 0

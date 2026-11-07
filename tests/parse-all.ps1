@@ -27,3 +27,4 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Host "Parsed $($files.Count) PowerShell files."
+exit 0

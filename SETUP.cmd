@@ -1,6 +1,5 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup.ps1" %*
-echo.
-pause
+rem The wizard self-elevates and shows a Next/Next Windows-style setup UI.
+start "" powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0app\SetupWizard.ps1"

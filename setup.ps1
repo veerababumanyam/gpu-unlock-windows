@@ -28,10 +28,13 @@ param(
     [switch]$SkipElevation
 )
 $ErrorActionPreference = 'Stop'
+if ($Silent) { $ProgressPreference = 'SilentlyContinue' }
 
 $repo = $PSScriptRoot
 $appName = 'GPU Unlock'
-$version = '2.1.0'
+$versionPath = Join-Path $PSScriptRoot 'VERSION'
+if (-not (Test-Path -LiteralPath $versionPath)) { throw "Missing version file: $versionPath" }
+$version = (Get-Content -LiteralPath $versionPath -Raw).Trim()
 
 # --- Elevate once so double-clicking SETUP.cmd can do everything ---
 function Test-IsAdmin {
@@ -113,7 +116,12 @@ if ($InstallStick) {
 
     try {
         & (Join-Path $repo 'install.ps1') @stickArgs
-        Write-Host "USB stick preparation completed successfully!" -ForegroundColor Green
+        if ($DryRun -or $WhatIf) {
+            Write-Host "USB stick dry run completed (no changes)." -ForegroundColor Yellow
+        }
+        else {
+            Write-Host "USB stick preparation completed successfully!" -ForegroundColor Green
+        }
     }
     catch {
         Write-Host "USB stick preparation failed: $($_.Exception.Message)" -ForegroundColor Red
@@ -149,16 +157,27 @@ if ($InstallApp -and -not $NoApp -and -not $DryRun -and -not $WhatIf -and $exitC
 
 Write-Host ""
 if ($exitCode -eq 0) {
-    Write-Host "=== Setup completed successfully! ===" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "Next steps:" -ForegroundColor Cyan
-    Write-Host "  1. Leave the USB stick connected and restart" -ForegroundColor Gray
-    Write-Host "  2. Enter BIOS (Del/F2 at boot), set USB stick (UEFI: ...) as #1 boot priority" -ForegroundColor Gray
-    Write-Host "  3. Save & Exit (F10)" -ForegroundColor Gray
-    Write-Host "  4. Windows will boot with GPU Unlock active" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "Status app: 'GPU Unlock' in Start Menu / Desktop" -ForegroundColor Gray
-    Write-Host "Auto-check: Runs at every logon (15s delay)" -ForegroundColor Gray
+    if ($DryRun -or $WhatIf) {
+        Write-Host "=== Dry run complete - no changes were made. ===" -ForegroundColor Yellow
+    }
+    else {
+        Write-Host "=== Setup completed successfully! ===" -ForegroundColor Green
+        Write-Host ""
+        if ($InstallStick) {
+            Write-Host "Next steps for the USB stick:" -ForegroundColor Cyan
+            Write-Host "  1. Keep the USB stick connected and restart" -ForegroundColor Gray
+            Write-Host "  2. Enter BIOS (Del/F2 at boot), set the USB stick (UEFI: ...) as #1 boot priority" -ForegroundColor Gray
+            Write-Host "  3. Save & Exit (F10)" -ForegroundColor Gray
+            Write-Host "  4. Windows will boot with GPU Unlock active" -ForegroundColor Gray
+            Write-Host ""
+        }
+        if ($InstallApp -and -not $NoApp) {
+            Write-Host "Status app: 'GPU Unlock' in Start Menu / Desktop" -ForegroundColor Gray
+            if (-not $NoAutoStart) {
+                Write-Host "Auto-check: Runs at every logon (15s delay)" -ForegroundColor Gray
+            }
+        }
+    }
 }
 else {
     Write-Host "=== Setup failed ===" -ForegroundColor Red

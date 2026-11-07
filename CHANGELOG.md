@@ -5,7 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.2.0] - 2026-11-07
+
+### Added
+- `SETUP.cmd` now opens a guided Windows-style wizard: system check, automatic
+  GPU family detection, USB drive selection, FAT32 confirmation, progress log
+  and a finish page with the BIOS instructions. The CLI `setup.ps1` remains.
+- `UNINSTALL.cmd` and `app\UninstallWizard.ps1` provide a guided uninstall. The
+  CLI uninstaller now removes the cache and installer logs, keeps the stick
+  backup by default, and supports `-CleanStick` and `-RemoveBackups`.
+- A Start Menu uninstall shortcut is created with the app.
+- `THIRD-PARTY-NOTICES.md` documents the upstream GPL-2.0-only components and
+  NVIDIA firmware terms.
+- `tests/parse-all.ps1` parses every PowerShell file; the optional Pester suite
+  runs on Pester 5+.
+- The installed app now carries `VERSION`, `README.md`, `LICENSE` and the
+  third-party notices.
+
+### Changed
+- This project's code is now **MIT licensed**. Downloaded upstream components
+  remain under their own GPL-2.0-only and NVIDIA terms.
+- Version 2.2.0 is read from `VERSION` instead of being duplicated in setup and
+  installer scripts.
+- `SETUP.cmd` is the wizard entry point; use `setup.ps1` for scripted installs
+  or `install.ps1` to prepare a stick only.
 
 ### Fixed
 - `Register-ScheduledTask`/`Unregister-ScheduledTask` helpers shadowed the

@@ -1,6 +1,6 @@
 @{
     RootModule = 'Unlock.psm1'
-    ModuleVersion = '2.1.0'
+    ModuleVersion = '2.2.0'
     GUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
     Author = 'GPU Unlock Project'
     Description = 'GPU Unlock Windows - Modular PowerShell library for NVIDIA tensor-rate unlock'
@@ -34,8 +34,8 @@
     PrivateData = @{
         PSData = @{
             Tags = @('gpu', 'nvidia', 'unlock', 'uefi', 'tensor')
-            LicenseUri = 'https://github.com/physicsdolphin/nv-uefi-unlocker'
-            ProjectUri = 'https://github.com/physicsdolphin/nv-uefi-unlocker'
+            LicenseUri = 'https://github.com/veerababumanyam/gpu-unlock-windows/blob/master/LICENSE'
+            ProjectUri = 'https://github.com/veerababumanyam/gpu-unlock-windows'
         }
     }
 }

@@ -15,7 +15,19 @@ $repo = Split-Path -Parent $PSScriptRoot
 $powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $taskName = 'GpuUnlockStatus'
 $appName = 'GPU Unlock'
-$version = '2.1.0'
+$versionPath = Join-Path $repo 'VERSION'
+if (Test-Path -LiteralPath $versionPath) {
+    $version = (Get-Content -LiteralPath $versionPath -Raw).Trim()
+}
+else {
+    $configPath = Join-Path $repo 'unlock.config.json'
+    if (Test-Path -LiteralPath $configPath) {
+        $version = ((Get-Content -LiteralPath $configPath -Raw) | ConvertFrom-Json).app.version
+    }
+    else {
+        $version = 'unknown'
+    }
+}
 
 # Default install directory. When uninstalling, the installed copy does not pass
 # -InstallDir, so honour the path recorded at install time (custom installs).
@@ -155,8 +167,9 @@ function Register-Uninstaller {
         Set-ItemProperty -Path $uninstallKey -Name 'InstallDate' -Value (Get-Date -Format 'yyyyMMdd') -Force
         Set-ItemProperty -Path $uninstallKey -Name 'DisplayIcon' -Value $displayIcon -Force
         Write-Log "Registered uninstaller in Windows Apps & Features"
+        return $true
     }
-    catch { Write-ErrorLog "Failed to register uninstaller" }
+    catch { Write-ErrorLog "Failed to register uninstaller" 'ERROR'; return $false }
 }
 
 function Unregister-Uninstaller {
@@ -166,9 +179,11 @@ function Unregister-Uninstaller {
         try {
             Remove-Item -Path $uninstallKey -Recurse -Force -ErrorAction Stop
             Write-Log "Unregistered uninstaller"
+            return $true
         }
-        catch { Write-ErrorLog "Failed to unregister uninstaller" }
+        catch { Write-ErrorLog "Failed to unregister uninstaller" 'ERROR'; return $false }
     }
+    return $true
 }
 
 function Install-Files {
@@ -177,7 +192,8 @@ function Install-Files {
     try {
         if (-not (Test-Path $InstallDir)) { New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null }
         
-        $files = @('unlock.config.json', 'verify.ps1', 'TROUBLESHOOTING.md')
+        $files = @('unlock.config.json', 'verify.ps1', 'TROUBLESHOOTING.md', 'README.md',
+                   'LICENSE', 'THIRD-PARTY-NOTICES.md', 'VERSION')
         foreach ($f in $files) {
             $src = Join-Path $repo $f
             $dst = Join-Path $InstallDir $f
@@ -209,11 +225,6 @@ function Install-Files {
             if (Test-Path $modDst) { Remove-Item -Recurse -Force -Path $modDst }
             Copy-Item -LiteralPath $modSrc -Destination $modDst -Recurse -Force -ErrorAction Stop
             Write-Log "Installed Unlock module folder"
-        }
-        
-        $iconPath = Join-Path $InstallDir 'icon.ico'
-        if (-not (Test-Path $iconPath)) {
-            $iconPath = (Join-Path $env:SystemRoot 'System32\imageres.dll,109')
         }
         
         Write-Log "Application files installed to: $InstallDir"
@@ -253,6 +264,12 @@ function Create-Shortcuts {
     if (-not $NoStartMenu) {
         $startLink = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs' "$appName.lnk"
         $success = (New-AppShortcut -Path $startLink -Arguments $shortcutArgs -IconPath $iconPath -WorkingDirectory $workDir) -and $success
+        $uninstallWizard = Join-Path $InstallDir 'app\UninstallWizard.ps1'
+        if (Test-Path -LiteralPath $uninstallWizard) {
+            $uninstallArgs = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$uninstallWizard`""
+            $uninstallLink = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Uninstall GPU Unlock.lnk'
+            $success = (New-AppShortcut -Path $uninstallLink -Arguments $uninstallArgs -Description 'Uninstall GPU Unlock' -IconPath $iconPath -WorkingDirectory $workDir) -and $success
+        }
     }
     
     return $success
@@ -267,6 +284,8 @@ function Remove-Shortcuts {
     if (-not $NoStartMenu) {
         $startLink = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs' "$appName.lnk"
         $success = (Remove-AppShortcut -Path $startLink) -and $success
+        $uninstallLink = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Uninstall GPU Unlock.lnk'
+        $success = (Remove-AppShortcut -Path $uninstallLink) -and $success
     }
     return $success
 }
@@ -324,7 +343,7 @@ function Set-RegistryKeys {
         Write-Log "Registry keys configured"
         return $true
     }
-    catch { Write-ErrorLog "Failed to set registry keys" 'WARN'; return $false }
+    catch { Write-ErrorLog "Failed to set registry keys" 'ERROR'; return $false }
 }
 
 function Remove-RegistryKeys {
@@ -334,9 +353,11 @@ function Remove-RegistryKeys {
         try {
             Remove-Item -Path $appKey -Recurse -Force -ErrorAction Stop
             Write-Log "Registry keys removed"
+            return $true
         }
-        catch { Write-ErrorLog "Failed to remove registry keys" 'WARN' }
+        catch { Write-ErrorLog "Failed to remove registry keys" 'ERROR'; return $false }
     }
+    return $true
 }
 
 # Main execution
@@ -344,19 +365,27 @@ if (-not (Ensure-Admin)) { exit 1 }
 
 if ($Remove) {
     Write-Log "Uninstalling $appName $version..."
-    Remove-Shortcuts
+    $shortcutsRemoved = Remove-Shortcuts
     $taskRemoved = $true
     if (-not $NoAutoStart) { $taskRemoved = Unregister-GpuUnlockTask }
     if (-not $taskRemoved) {
         Write-Log "Uninstall incomplete: the $taskName logon check could not be removed." 'ERROR'
         exit 1
     }
-    Unregister-Uninstaller
-    Remove-RegistryKeys
+    if (-not (Unregister-Uninstaller)) {
+        Write-Log "Uninstall incomplete: the Apps & Features entry could not be removed." 'ERROR'
+        exit 1
+    }
+    $registryRemoved = Remove-RegistryKeys
+    $filesRemoved = $true
     if (-not $Force) {
         Write-Log "Keeping application files at $InstallDir (use -Force to remove)" 'INFO'
     } else {
-        Remove-Files -InstallDir $InstallDir
+        $filesRemoved = Remove-Files -InstallDir $InstallDir
+    }
+    if (-not ($shortcutsRemoved -and $registryRemoved -and $filesRemoved)) {
+        Write-Log "Uninstall incomplete: some components could not be removed. Re-run as administrator." 'ERROR'
+        exit 1
     }
     Write-Log "$appName uninstalled successfully" 'INFO'
     exit 0
@@ -387,12 +416,11 @@ $ErrorActionPreference = "Stop"
         Set-Content -Path $uninstallScript -Value $uninstallContent -Encoding UTF8
     }
 }
-Register-Uninstaller -InstallDir $InstallDir -UninstallScript $uninstallScript
+$uninstallerRegistered = Register-Uninstaller -InstallDir $InstallDir -UninstallScript $uninstallScript
+$registryConfigured = Set-RegistryKeys -InstallDir $InstallDir
 
-Set-RegistryKeys -InstallDir $InstallDir
-
-if (-not $taskRegistered) {
-    Write-Log "Installation incomplete: the $taskName logon check could not be registered." 'ERROR'
+if (-not ($taskRegistered -and $uninstallerRegistered -and $registryConfigured)) {
+    Write-Log "Installation incomplete: one or more Windows components could not be configured." 'ERROR'
     exit 1
 }
 

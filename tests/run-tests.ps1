@@ -131,6 +131,7 @@ $setupTemp = Join-Path $env:TEMP ('gpu-unlock-setup-' + [guid]::NewGuid().ToStri
 New-Item -ItemType Directory -Force -Path $setupTemp | Out-Null
 try {
     Copy-Item -LiteralPath (Join-Path $repoRoot 'setup.ps1') -Destination (Join-Path $setupTemp 'setup.ps1') -Force
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'VERSION') -Destination (Join-Path $setupTemp 'VERSION') -Force
     Copy-Item -LiteralPath (Join-Path $repoRoot 'Unlock') -Destination (Join-Path $setupTemp 'Unlock') -Recurse -Force
     New-Item -ItemType Directory -Force -Path (Join-Path $setupTemp 'app') | Out-Null
     Set-Content -LiteralPath (Join-Path $setupTemp 'app\Install-App.ps1') -Value 'exit 7' -Encoding Ascii
@@ -189,6 +190,20 @@ $configVersion = ((Get-Content -LiteralPath (Join-Path $repoRoot 'unlock.config.
 $manifestData = & ([ScriptBlock]::Create((Get-Content -LiteralPath (Join-Path $repoRoot 'Unlock\Unlock.psd1') -Raw)))
 $manifestVersion = $manifestData.ModuleVersion
 Assert-UnlockTest (($versionFile -eq $configVersion) -and ($versionFile -eq $manifestVersion)) "VERSION, config and module versions agree ($versionFile)"
+
+$licenseText = Get-Content -LiteralPath (Join-Path $repoRoot 'LICENSE') -Raw
+Assert-UnlockTest ($licenseText.TrimStart().StartsWith('MIT License') -and $licenseText -notmatch 'GNU GENERAL PUBLIC LICENSE') 'LICENSE is MIT'
+
+$noticesPath = Join-Path $repoRoot 'THIRD-PARTY-NOTICES.md'
+$noticesText = if (Test-Path -LiteralPath $noticesPath) { Get-Content -LiteralPath $noticesPath -Raw } else { '' }
+Assert-UnlockTest ($noticesText -match 'GPL-2\.0' -and $noticesText -match 'nv-uefi-unlocker') 'third-party notices document upstream GPL-2.0'
+
+$setupEntry = Get-Content -LiteralPath (Join-Path $repoRoot 'SETUP.cmd') -Raw
+$uninstallEntry = Get-Content -LiteralPath (Join-Path $repoRoot 'UNINSTALL.cmd') -Raw
+Assert-UnlockTest ($setupEntry -match 'SetupWizard\.ps1' -and $uninstallEntry -match 'UninstallWizard\.ps1') 'SETUP.cmd and UNINSTALL.cmd open the wizards'
+
+$uninstallText = Get-Content -LiteralPath (Join-Path $repoRoot 'Uninstall.ps1') -Raw
+Assert-UnlockTest ($uninstallText -match '\[switch\]\$CleanStick' -and $uninstallText -match '\[switch\]\$RemoveBackups') 'uninstaller exposes -CleanStick and -RemoveBackups'
 
 # The public module must export its manifest API and remove it again cleanly.
 $manifestFunctions = @($manifestData.FunctionsToExport)

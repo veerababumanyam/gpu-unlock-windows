@@ -22,6 +22,18 @@ Assert-UnlockTest (@($cfg.expectedFiles.ad102).Count -eq 7) 'config lists 7 ad10
 Assert-UnlockTest (@($cfg.expectedFiles.ga102).Count -eq 7) 'config lists 7 ga102 assets'
 Assert-UnlockTest (@($cfg.expectedFiles.tu10x).Count -eq 7) 'config lists 7 tu10x assets'
 
+$unlocked = "SS0 = 0x88888888`nSS1 = 0x00000008"
+$r = ConvertFrom-SsdiagOutput -Text $unlocked
+Assert-UnlockTest ($r.Ok) 'ssdiag unlocked sample passes'
+
+$locked = "SS0 = 0x00000000`nSS1 = 0x00000000"
+$r = ConvertFrom-SsdiagOutput -Text $locked
+Assert-UnlockTest (-not $r.Ok) 'ssdiag locked sample fails'
+
+$lower = "ss0: 0x88888888`nss1: 0x0000008"
+$r = ConvertFrom-SsdiagOutput -Text $lower
+Assert-UnlockTest ($r.Ok) 'ssdiag parser is case-insensitive'
+
 $tmp = Join-Path $env:TEMP ('gpu-unlock-test-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {

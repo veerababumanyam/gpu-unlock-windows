@@ -273,6 +273,23 @@ function Install-UnlockStick {
     [pscustomobject]@{ Root = $root; Volume = $vol; Ok = ($bad.Count -eq 0); Bad = $bad; BackedUp = $backed }
 }
 
+function ConvertFrom-SsdiagOutput {
+    param([Parameter(Mandatory)][string]$Text)
+
+    $ss0 = [regex]::Match($Text, '(?i)SS0\s*[=:]\s*(0x[0-9a-f]+)').Groups[1].Value
+    $ss1 = [regex]::Match($Text, '(?i)SS1\s*[=:]\s*(0x[0-9a-f]+)').Groups[1].Value
+
+    $ok = $false
+    if ($ss0) {
+        $target = [Convert]::ToUInt32('88888888', 16)
+        $ok = ([Convert]::ToUInt32($ss0.Substring(2), 16) -eq $target)
+        if ($ok -and $ss1) {
+            $ok = (([Convert]::ToUInt32($ss1.Substring(2), 16) -band 0xF) -eq 0x8)
+        }
+    }
+    [pscustomobject]@{ Ok = $ok; Ss0 = $ss0; Ss1 = $ss1; Raw = $Text }
+}
+
 function Invoke-UnlockSsdiag {
     param([Parameter(Mandatory)][string]$SsdiagPath)
 
@@ -282,17 +299,7 @@ function Invoke-UnlockSsdiag {
     }
 
     $text = (& $SsdiagPath 2>&1 | Out-String)
-    $ss0 = [regex]::Match($text, 'SS0\s*[=:]\s*(0x[0-9a-fA-F]+)').Groups[1].Value
-    $ss1 = [regex]::Match($text, 'SS1\s*[=:]\s*(0x[0-9a-fA-F]+)').Groups[1].Value
-
-    $ok = $false
-    if ($ss0) {
-        $ok = ([Convert]::ToUInt32($ss0.Substring(2), 16) -eq 0x88888888)
-        if ($ok -and $ss1) {
-            $ok = (([Convert]::ToUInt32($ss1.Substring(2), 16) -band 0xF) -eq 0x8)
-        }
-    }
-    [pscustomobject]@{ Ok = $ok; Ss0 = $ss0; Ss1 = $ss1; Raw = $text }
+    ConvertFrom-SsdiagOutput -Text $text
 }
 
 Export-ModuleMember -Function *

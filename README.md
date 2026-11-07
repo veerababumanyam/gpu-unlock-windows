@@ -11,6 +11,9 @@ starts; the status app confirms it after Windows is up.
 
 ![GPU Unlock setup wizard](docs/images/setup-wizard.png)
 
+Printable version: **[GPU Unlock setup and user guide (PDF)](docs/GPU-Unlock-Guide.pdf)**.
+The setup wizard and the status app's **Open guide** button open this PDF.
+
 ## Quick start (non-technical)
 
 1. Download or clone this repository to a folder on the PC.
@@ -112,7 +115,7 @@ Open **GPU Unlock** from the Desktop or Start Menu. The app shows:
 - the raw `ssdiag` output
 
 The app has **Check again**, **Repair selectors** (`ssdiag --reapply`), **Open
-guide** and **Open log** buttons. The log is
+guide** (the printable PDF) and **Open log** buttons. The log is
 `%LOCALAPPDATA%\gpu-unlock-windows\status.log` and rotates automatically (five
 files, 5 MB each).
 
@@ -221,6 +224,8 @@ Useful `setup.ps1` switches: `-Family ad102|ga102|tu10x|all|localhost`,
 | `unlock.config.json` | Pinned release, asset names, app defaults |
 | `VERSION` | Single source of truth for the version |
 | `docs/BIOS-SETUP.md` | One-time firmware step |
+| `docs/GPU-Unlock-Guide.pdf` | Printable setup and user guide (opened by the app) |
+| `docs/build-guide.py` | Maintainer script that rebuilds the PDF guide |
 | `TROUBLESHOOTING.md` | Symptom → fix |
 | `LICENSE` | MIT license for this project |
 | `THIRD-PARTY-NOTICES.md` | Upstream GPL-2.0 and NVIDIA terms |
@@ -251,6 +256,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\parse-all.ps1
 # Optional Pester 5+ suite
 Install-Module -Name Pester -Force -Scope CurrentUser
 Invoke-Pester -Path .\tests\run-tests.Pester.ps1
+
+# Rebuild the printable PDF guide (maintainers, needs reportlab)
+python -m pip install reportlab
+python .\docs\build-guide.py
 ```
 
 GitHub Actions runs the parse check and the primary suite on PowerShell 7 and

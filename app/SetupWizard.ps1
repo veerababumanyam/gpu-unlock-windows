@@ -15,7 +15,7 @@ if (Test-Path -LiteralPath $versionPath) {
     $version = (Get-Content -LiteralPath $versionPath -Raw).Trim()
 }
 else {
-    $version = '2.2.0'
+    $version = '2.2.1'
 }
 
 function Test-IsAdmin {
@@ -228,11 +228,12 @@ $lblSystemHint = New-WizardLabel -Text 'Errors above must be fixed before setup 
 $pageSystem.Controls.Add($lblSystemHint)
 
 $btnBiosGuide = New-Object System.Windows.Forms.Button
-$btnBiosGuide.Text = 'Open BIOS guide'
+$btnBiosGuide.Text = 'Open guide'
 $btnBiosGuide.Location = New-Object System.Drawing.Point(28, 456)
 $btnBiosGuide.Size = New-Object System.Drawing.Size(130, 30)
 $btnBiosGuide.Add_Click({
-        $guide = Join-Path $repoRoot 'docs\BIOS-SETUP.md'
+        $guide = Join-Path $repoRoot 'docs\GPU-Unlock-Guide.pdf'
+        if (-not (Test-Path -LiteralPath $guide)) { $guide = Join-Path $repoRoot 'TROUBLESHOOTING.md' }
         if (Test-Path -LiteralPath $guide) { Start-Process -FilePath $guide }
     })
 $pageSystem.Controls.Add($btnBiosGuide)
@@ -362,7 +363,8 @@ $btnOpenGuide.Text = 'Open guide'
 $btnOpenGuide.Location = New-Object System.Drawing.Point(28, 380)
 $btnOpenGuide.Size = New-Object System.Drawing.Size(110, 32)
 $btnOpenGuide.Add_Click({
-        $guide = Join-Path $repoRoot 'TROUBLESHOOTING.md'
+        $guide = Join-Path $repoRoot 'docs\GPU-Unlock-Guide.pdf'
+        if (-not (Test-Path -LiteralPath $guide)) { $guide = Join-Path $repoRoot 'TROUBLESHOOTING.md' }
         if (Test-Path -LiteralPath $guide) { Start-Process -FilePath $guide }
     })
 $pageFinish.Controls.Add($btnOpenGuide)

@@ -13,7 +13,7 @@ if (Test-Path -LiteralPath $versionPath) {
     $version = (Get-Content -LiteralPath $versionPath -Raw).Trim()
 }
 else {
-    $version = '2.2.0'
+    $version = '2.2.1'
 }
 
 function Test-IsAdmin {

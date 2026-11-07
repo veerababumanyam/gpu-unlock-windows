@@ -34,7 +34,7 @@
   },
   "app": {
     "name": "GPU Unlock",
-    "version": "2.2.0",
+    "version": "2.2.1",
     "publisher": "GPU Unlock Project",
     "installDir": "%ProgramFiles%\\GPU Unlock",
     "scheduledTask": "GpuUnlockStatus",

@@ -224,6 +224,13 @@ Assert-UnlockTest ($setupEntry -match 'SetupWizard\.ps1' -and $uninstallEntry -m
 $uninstallText = Get-Content -LiteralPath (Join-Path $repoRoot 'Uninstall.ps1') -Raw
 Assert-UnlockTest ($uninstallText -match '\[switch\]\$CleanStick' -and $uninstallText -match '\[switch\]\$RemoveBackups') 'uninstaller exposes -CleanStick and -RemoveBackups'
 
+$guidePdf = Join-Path $repoRoot 'docs\GPU-Unlock-Guide.pdf'
+$guideOk = (Test-Path -LiteralPath $guidePdf) -and ((Get-Item -LiteralPath $guidePdf).Length -gt 10000)
+Assert-UnlockTest $guideOk 'printable PDF guide exists'
+$setupWizardText = Get-Content -LiteralPath (Join-Path $repoRoot 'app\SetupWizard.ps1') -Raw
+$statusAppText = Get-Content -LiteralPath (Join-Path $repoRoot 'app\GpuUnlock.ps1') -Raw
+Assert-UnlockTest (($setupWizardText -match 'GPU-Unlock-Guide\.pdf') -and ($statusAppText -match 'GPU-Unlock-Guide\.pdf')) 'Open guide buttons target the PDF guide'
+
 # The public module must export its manifest API and remove it again cleanly.
 $manifestFunctions = @($manifestData.FunctionsToExport)
 $unlockModule = Get-Module -Name Unlock

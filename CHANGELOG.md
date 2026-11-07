@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-11-07
+
+### Added
+- Printable PDF guide at `docs/GPU-Unlock-Guide.pdf`, with a maintainer build
+  script at `docs/build-guide.py`.
+
+### Changed
+- The setup wizard and the status app's **Open guide** button now open the PDF
+  guide. `TROUBLESHOOTING.md` remains as a fallback only.
+
+### Fixed
+- Start Menu shortcut creation failed on Windows PowerShell 5.1 because
+  `Join-Path` was called with three positional paths. The directory and file
+  are now joined separately, and the test suite guards against the pattern.
+
 ## [2.2.0] - 2026-11-07
 
 ### Added

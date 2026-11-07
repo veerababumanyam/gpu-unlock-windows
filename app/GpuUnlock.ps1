@@ -160,9 +160,10 @@ $btnRepair.Add_Click({
     Update-Ui
 })
 $btnGuide.Add_Click({
-    $guide = Join-Path $repoRoot 'TROUBLESHOOTING.md'
+    $guide = Join-Path $repoRoot 'docs\GPU-Unlock-Guide.pdf'
+    if (-not (Test-Path -LiteralPath $guide)) { $guide = Join-Path $repoRoot 'TROUBLESHOOTING.md' }
     if (Test-Path -LiteralPath $guide) { Start-Process $guide }
-    else { [void][System.Windows.Forms.MessageBox]::Show('TROUBLESHOOTING.md was not found in the install folder.', 'GPU Unlock', 'OK', 'Information') }
+    else { [void][System.Windows.Forms.MessageBox]::Show('The GPU Unlock guide was not found in the install folder.', 'GPU Unlock', 'OK', 'Information') }
 })
 $btnLog.Add_Click({ 
     if (Test-Path $logPath) { Start-Process $logPath } 

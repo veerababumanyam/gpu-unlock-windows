@@ -262,12 +262,13 @@ function Create-Shortcuts {
     }
     
     if (-not $NoStartMenu) {
-        $startLink = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs' "$appName.lnk"
+        $startMenuDir = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
+        $startLink = Join-Path $startMenuDir "$appName.lnk"
         $success = (New-AppShortcut -Path $startLink -Arguments $shortcutArgs -IconPath $iconPath -WorkingDirectory $workDir) -and $success
         $uninstallWizard = Join-Path $InstallDir 'app\UninstallWizard.ps1'
         if (Test-Path -LiteralPath $uninstallWizard) {
             $uninstallArgs = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$uninstallWizard`""
-            $uninstallLink = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Uninstall GPU Unlock.lnk'
+            $uninstallLink = Join-Path $startMenuDir 'Uninstall GPU Unlock.lnk'
             $success = (New-AppShortcut -Path $uninstallLink -Arguments $uninstallArgs -Description 'Uninstall GPU Unlock' -IconPath $iconPath -WorkingDirectory $workDir) -and $success
         }
     }
@@ -282,9 +283,10 @@ function Remove-Shortcuts {
         $success = (Remove-AppShortcut -Path $desktopLink) -and $success
     }
     if (-not $NoStartMenu) {
-        $startLink = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs' "$appName.lnk"
+        $startMenuDir = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
+        $startLink = Join-Path $startMenuDir "$appName.lnk"
         $success = (Remove-AppShortcut -Path $startLink) -and $success
-        $uninstallLink = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Uninstall GPU Unlock.lnk'
+        $uninstallLink = Join-Path $startMenuDir 'Uninstall GPU Unlock.lnk'
         $success = (Remove-AppShortcut -Path $uninstallLink) -and $success
     }
     return $success

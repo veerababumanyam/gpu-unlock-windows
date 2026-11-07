@@ -126,6 +126,25 @@ $installerFunctions = @($installerAst.FindAll({
 $shadowedFunctions = @($installerFunctions | Where-Object { Get-Command -Name $_ -ErrorAction SilentlyContinue })
 Assert-UnlockTest ($shadowedFunctions.Count -eq 0) ("installer functions do not shadow existing commands (found: " + ($shadowedFunctions -join ', ') + ')')
 
+# Join-Path on Windows PowerShell 5.1 accepts only two positional arguments.
+$joinPathOffenders = @()
+Get-ChildItem -LiteralPath $repoRoot -Recurse -File | Where-Object { $_.Extension -in '.ps1', '.psm1' } | ForEach-Object {
+    $file = $_
+    $tokens = $null
+    $parseErrors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$parseErrors)
+    if (@($parseErrors).Count -gt 0) { return }
+    $joinCalls = $ast.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Join-Path'
+        }, $true)
+    foreach ($call in $joinCalls) {
+        $positional = @($call.CommandElements | Select-Object -Skip 1 | Where-Object { $_ -isnot [System.Management.Automation.Language.CommandParameterAst] })
+        if ($positional.Count -gt 2) { $joinPathOffenders += "$($file.Name): $($call.Extent.Text)" }
+    }
+}
+Assert-UnlockTest ($joinPathOffenders.Count -eq 0) ("Join-Path calls use at most two positional arguments (found: " + ($joinPathOffenders -join '; ') + ')')
+
 # setup.ps1 must not report success when a child installer step fails.
 $setupTemp = Join-Path $env:TEMP ('gpu-unlock-setup-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $setupTemp | Out-Null

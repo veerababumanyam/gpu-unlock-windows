@@ -351,7 +351,8 @@ def story():
     out.append(bullet("The logon task runs 15 seconds after login and warns only when the unlock is not active."))
 
     out.append(h1("Verification"))
-    out.append(p("A successful unlock reports <b>SS0 = 0x88888888</b> and an SS1 value whose low nibble is <b>0x8</b>."))
+    out.append(p("A successful unlock reports <b>SS0 = 0x88888888</b> and an SS1 value whose low nibble is <b>0x8</b> for your card's own family."))
+    out.append(p("ssdiag prints the register window of every GPU family on every card. On a 40/30-series card the Turing window answers <b>0xbadf5040</b> because the die has nothing there; that line is expected and is not a failure. The app's verdict uses the window of the card it detected."))
     out.append(p("From an elevated PowerShell you can also run:"))
     out.append(code(".\\verify.ps1 -Elevate"))
     out.append(p("The status app's log is at <b>%LOCALAPPDATA%\\gpu-unlock-windows\\status.log</b> and rotates automatically (five files, 5 MB each)."))
@@ -367,6 +368,7 @@ def story():
                 ["0xc000000f or 0xc0000225", "Two ESPs or a stale chain. Update to the pinned release and replay."],
                 ["MAP_PHYS win32 error 5 from ssdiag", "HVCI or a kernel-mode antivirus filter holds the mapping. Disable the filter or HVCI and reboot."],
                 ["Antivirus flags ssdiag.exe", "Expected for the unsigned diagnostic with an embedded kernel driver. Restore it from quarantine."],
+                ["Status app says NOT UNLOCKED but the dump shows VERDICT: UNLOCKED", "Older builds parsed the first register window in the dump, which belongs to another GPU family. Update to 2.2.3 or later and run SETUP.cmd -InstallApp again."],
                 ["Unlocked but no speedup", "Verify SS0/SS1. The gains are FP16/BF16/TF32 with FP32 accumulate; INT8/INT4, FP32 and decode-bound work do not move."],
                 ["Unlock gone after sleep or power loss", "Expected. Restart with the stick."],
                 ["Scheduled task or shortcut missing", "Run SETUP.cmd as administrator and choose Install app. Check Task Scheduler for GpuUnlockStatus."],

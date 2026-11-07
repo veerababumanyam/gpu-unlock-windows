@@ -1,6 +1,6 @@
 @{
     RootModule = 'Unlock.psm1'
-    ModuleVersion = '2.2.2'
+    ModuleVersion = '2.2.3'
     GUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
     Author = 'GPU Unlock Project'
     Description = 'GPU Unlock Windows - Modular PowerShell library for NVIDIA tensor-rate unlock'

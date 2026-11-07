@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.3] - 2026-11-07
+
+### Fixed
+- The status app reported `NOT UNLOCKED` with `SS0 = 0xbadf5040` on a card that
+  ssdiag itself had just judged `UNLOCKED`. ssdiag prints the FEAT cluster of
+  every GPU family on every chip, and the first `SS0 =` in the dump belongs to
+  the window the die does not have; that window answers `0xbadf5040`
+  (`PRIV_VIOLATION`, a refused read) by design. `ConvertFrom-SsdiagOutput` now
+  takes the result from ssdiag's own `VERDICT` line and reports the SS pair of
+  that family, so `verify.ps1`, the logon check and the status window agree with
+  the diagnostic. The log line carries the detected family.
+- Regression coverage for the cross-visibility dump: a real RTX 4080 SUPER
+  capture (`tests\fixtures\ssdiag-ada-rtx4080s-live.txt`), plus Turing and
+  locked-Ada cases in both the dependency-free and Pester suites.
+
 ## [2.2.2] - 2026-11-07
 
 ### Fixed

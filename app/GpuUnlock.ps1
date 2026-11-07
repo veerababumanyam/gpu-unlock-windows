@@ -67,19 +67,19 @@ function Get-GpuUnlockStatus {
     param([string[]]$Arguments = @())
     $ssdiag = Join-Path $Cache 'ssdiag.exe'
     if (-not (Test-Path -LiteralPath $ssdiag)) {
-        return [pscustomobject]@{ Ok = $false; Ss0 = ''; Ss1 = ''; Raw = "ssdiag not found at $ssdiag. Run SETUP.cmd first." }
+        return [pscustomobject]@{ Ok = $false; Ss0 = ''; Ss1 = ''; Family = ''; Raw = "ssdiag not found at $ssdiag. Run SETUP.cmd first." }
     }
     try {
         Invoke-UnlockSsdiag -SsdiagPath $ssdiag -Arguments $Arguments
     }
     catch {
-        [pscustomobject]@{ Ok = $false; Ss0 = ''; Ss1 = ''; Raw = $_.Exception.Message }
+        [pscustomobject]@{ Ok = $false; Ss0 = ''; Ss1 = ''; Family = ''; Raw = $_.Exception.Message }
     }
 }
 
 if (-not $Interactive) {
     $status = Get-GpuUnlockStatus
-    Write-Log ("ok={0} ss0={1} ss1={2}" -f $status.Ok, $status.Ss0, $status.Ss1)
+    Write-Log ("ok={0} ss0={1} ss1={2} family={3}" -f $status.Ok, $status.Ss0, $status.Ss1, $status.Family)
     if (-not $status.Ok -and -not $Silent) {
         [void][System.Windows.Forms.MessageBox]::Show(
             ("GPU unlock is NOT active.`n`nSS0={0}  SS1={1}`n`nInsert the GPU Unlock USB stick and restart.`nIf it is already inserted, check the BIOS boot order." -f $status.Ss0, $status.Ss1),

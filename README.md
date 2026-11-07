@@ -5,9 +5,12 @@ USB stick, installs a status app, and configures Windows automatically for the
 GPU it detects. The unlock itself runs from the USB stick **before** Windows
 starts; the status app confirms it after Windows is up.
 
-> **Status app result:** green `UNLOCKED` means `SS0 = 0x88888888` and the low
-> nibble of `SS1` is `0x8`. Red `NOT UNLOCKED` means replay the USB boot and
-> check the BIOS boot order.
+> **Status app result:** green `UNLOCKED` is ssdiag's own verdict for the card it
+> detected - that card's family window reports `SS0 = 0x88888888` and an `SS1`
+> whose low nibble is `0x8`. Red `NOT UNLOCKED` means replay the USB boot and
+> check the BIOS boot order. ssdiag also prints the register window of the other
+> GPU families; on a 40/30-series card the Turing window answers `0xbadf5040`
+> (a refused read, `PRIV_VIOLATION`) by design and is not a failure.
 
 ![GPU Unlock setup wizard](docs/images/setup-wizard.png)
 
@@ -125,7 +128,8 @@ Command line check (elevated PowerShell):
 .\verify.ps1 -Elevate
 ```
 
-Expected when active: `SS0 = 0x88888888`, `SS1` low nibble `0x8`.
+Expected when active: `SS0 = 0x88888888`, `SS1` low nibble `0x8`, from the
+cluster of the detected family (`ampere/ada` on RTX 40/30, `turing` on RTX 20).
 
 ## Uninstall
 

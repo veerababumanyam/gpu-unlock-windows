@@ -6,6 +6,7 @@ $ErrorActionPreference = 'Stop'
 BeforeAll {
     $repoRoot = Split-Path -Parent $PSScriptRoot
     Import-Module (Join-Path $repoRoot 'Unlock\Unlock.psd1') -Force -DisableNameChecking
+    $script:fixtureDir = Join-Path $PSScriptRoot 'fixtures'
 }
 
 Describe "Convert-UnlockBusId" {
@@ -73,6 +74,28 @@ Describe "ConvertFrom-SsdiagOutput" {
         $partial = "SS0 = 0x88888888"
         $r = ConvertFrom-SsdiagOutput -Text $partial
         $r.Ok | Should -Be $false
+    }
+
+    It "uses the verdict family, not the dead other-family window" {
+        $fixture = Join-Path $script:fixtureDir 'ssdiag-ada-rtx4080s-live.txt'
+        $r = ConvertFrom-SsdiagOutput -Text (Get-Content -LiteralPath $fixture -Raw)
+        $r.Ok | Should -Be $true
+        $r.Ss0 | Should -Be '0x88888888'
+        $r.Ss1 | Should -Be '0x00000008'
+        $r.Family | Should -Be 'ada'
+    }
+
+    It "stays locked when only the verdict family is locked" {
+        $locked = @"
+  turing 0x4096xx      SS0       = 0xbadf5040 [PRIV_VIOLATION]
+  turing 0x4096xx      SS1       = 0xbadf5040 [PRIV_VIOLATION]
+  ampere/ada 0x823xxx  SS0       = 0x23443031 [0* 0* 0* 0* 0* 0* 0* 0*]
+  ampere/ada 0x823xxx  SS1       = 0x00000002 [0*]
+VERDICT [ada]: NOT_UNLOCKED
+"@
+        $r = ConvertFrom-SsdiagOutput -Text $locked
+        $r.Ok | Should -Be $false
+        $r.Ss0 | Should -Be '0x23443031'
     }
 }
 

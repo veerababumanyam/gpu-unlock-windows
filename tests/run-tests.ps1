@@ -41,6 +41,42 @@ $partial = "SS0 = 0x88888888"
 $r = ConvertFrom-SsdiagOutput -Text $partial
 Assert-UnlockTest (-not $r.Ok) 'ssdiag without SS1 does not pass'
 
+# Regression: ssdiag prints the FEAT cluster of every mapped family, and the
+# window this die does not have answers 0xbadf5040 (PRIV_VIOLATION). Reading the
+# first "SS0 =" therefore reported a dead window on a fully unlocked card.
+$fixture = Join-Path $repoRoot 'tests\fixtures\ssdiag-ada-rtx4080s-live.txt'
+$r = ConvertFrom-SsdiagOutput -Text (Get-Content -LiteralPath $fixture -Raw)
+Assert-UnlockTest ($r.Ok) 'ssdiag verdict wins over the dead other-family window'
+Assert-UnlockTest (($r.Ss0 -eq '0x88888888') -and ($r.Ss1 -eq '0x00000008')) 'ssdiag reports the verdict family values (Ada)'
+Assert-UnlockTest ($r.Family -eq 'ada') 'ssdiag reports the detected family'
+
+$turingLive = @"
+  turing 0x4096xx      PLM       = 0xffffffff (OPEN)
+  turing 0x4096xx      SS0       = 0x88888888 [0* 0* 0* 0* 0* 0* 0* 0*]
+  turing 0x4096xx      READOUT   = 0x00000000 [full speed]
+  turing 0x4096xx      SS1       = 0x00000008 [0*]
+  ampere/ada 0x823xxx  PLM       = 0xbadf5040 (closed (non-standard))
+  ampere/ada 0x823xxx  SS0       = 0xbadf5040 [PRIV_VIOLATION]
+  ampere/ada 0x823xxx  SS1       = 0xbadf5040 [PRIV_VIOLATION]
+  ampere/ada 0x823xxx  READOUT_1 = 0xbadf5040 [PRIV_VIOLATION]
+VERDICT [turing]: UNLOCKED (override values live)
+"@
+$r = ConvertFrom-SsdiagOutput -Text $turingLive
+Assert-UnlockTest ($r.Ok -and ($r.Ss0 -eq '0x88888888')) 'ssdiag reads the Turing window on a Turing die'
+
+$adaLocked = @"
+  turing 0x4096xx      PLM       = 0xbadf5040 (closed (non-standard))
+  turing 0x4096xx      SS0       = 0xbadf5040 [PRIV_VIOLATION]
+  turing 0x4096xx      SS1       = 0xbadf5040 [PRIV_VIOLATION]
+  ampere/ada 0x823xxx  PLM       = 0x0004cb8f (closed (stock))
+  ampere/ada 0x823xxx  SS0       = 0x23443031 [0* 0* 0* 0* 0* 0* 0* 0*]
+  ampere/ada 0x823xxx  SS1       = 0x00000002 [0*]
+  ampere/ada 0x823xxx  READOUT_1 = 0x00401080 [throttled]
+VERDICT [ada]: NOT_UNLOCKED
+"@
+$r = ConvertFrom-SsdiagOutput -Text $adaLocked
+Assert-UnlockTest ((-not $r.Ok) -and ($r.Ss0 -eq '0x23443031')) 'ssdiag keeps a locked Ada card locked and reports its own window'
+
 $mtmp = Join-Path $env:TEMP ('gpu-unlock-markers-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $mtmp | Out-Null
 try {

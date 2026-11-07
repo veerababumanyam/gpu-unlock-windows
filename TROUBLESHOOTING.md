@@ -13,6 +13,7 @@ reproducible field reports, not guesses.
 | `MAP_PHYS win32 error 5` from ssdiag | HVCI or a kernel-mode AV filter holds the mapping | 0.6.3+ prints the precondition breakdown. Pausing user-mode AV is not enough; remove/disable the kernel filter or HVCI, reboot. |
 | Antivirus flags `ssdiag.exe` | Embedded kernel driver, unsigned host | Expected; it ships as a separate asset for this reason. Restore from quarantine. |
 | Gate open but SS values wrong | Selectors reverted | `ssdiag --reapply` (writes SS0/SS1 only behind an open gate; does not write PLM). |
+| Status app says `NOT UNLOCKED` while the dump contains `VERDICT [ada]: UNLOCKED` | Older builds parsed the first `SS0 =` in the dump, which belongs to the other family's register window and answers `0xbadf5040` there | Update to 2.2.3+ and re-run `SETUP.cmd -InstallApp`. `0xbadf5040` is `PRIV_VIOLATION` - the die refused the read; on the non-native window it is expected, not a lock state. |
 | Unlocked but no speedup | Power wall, quantized path, or workload not using FP32-accumulate tensor | Verify SS0/SS1 first. BF16/FP16/TF32 with FP32 accumulate move; INT8/INT4/FP32 and decode-bound workloads do not. |
 | Unlock gone after sleep or power loss | Volatile register state | Expected. Replay the stick. |
 | Board powers off at image handoff | Board-specific chain failure | #128 (ASUS B760M) is closed by v2.1.10; update and retry. If it persists, archive `loader.log` and report upstream with board/BIOS. |

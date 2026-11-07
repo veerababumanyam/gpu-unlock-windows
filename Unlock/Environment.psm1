@@ -35,8 +35,17 @@ function Test-UnlockEnvironment {
     }
 
     $bl = $null
-    try { $bl = @(Get-BitLockerVolume -ErrorAction Stop) } catch { $bl = $null }
-    if ($null -eq $bl) {
+    $blUnavailable = $false
+    try {
+        $bl = @(Get-BitLockerVolume -ErrorAction Stop)
+    }
+    catch {
+        $blUnavailable = $true
+    }
+    if ($blUnavailable) {
+        $checks += [pscustomobject]@{ Name = 'BitLocker'; Level = 'warn'; Detail = 'could not check - keep the recovery key before boot changes' }
+    }
+    elseif ($bl.Count -eq 0) {
         $checks += [pscustomobject]@{ Name = 'BitLocker'; Level = 'ok'; Detail = 'not present' }
     }
     else {

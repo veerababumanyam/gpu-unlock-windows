@@ -232,6 +232,13 @@ $statusAppText = Get-Content -LiteralPath (Join-Path $repoRoot 'app\GpuUnlock.ps
 Assert-UnlockTest (($setupWizardText -match 'GPU-Unlock-Guide\.pdf') -and ($statusAppText -match 'GPU-Unlock-Guide\.pdf')) 'Open guide buttons target the PDF guide'
 Assert-UnlockTest (($setupWizardText -match 'msedge\.exe') -and ($statusAppText -match 'msedge\.exe')) 'PDF guide opens in Edge when no PDF association is registered'
 
+$stagingText = Get-Content -LiteralPath (Join-Path $repoRoot 'Unlock\Staging.psm1') -Raw
+$checkIndex = $stagingText.IndexOf('Test-UnlockStaging -Root $Staging')
+$backupIndex = $stagingText.IndexOf('Copy-Item -LiteralPath $existing')
+$formatIndex = $stagingText.IndexOf('Format-Volume')
+Assert-UnlockTest ($checkIndex -gt 0 -and $checkIndex -lt $backupIndex -and $backupIndex -lt $formatIndex) 'stick validates staging and backs up EFI before formatting'
+Assert-UnlockTest ($stagingText -match 'gsp-gate\.txt') 'stick copy includes the Turing gate record when present'
+
 # The public module must export its manifest API and remove it again cleanly.
 $manifestFunctions = @($manifestData.FunctionsToExport)
 $unlockModule = Get-Module -Name Unlock

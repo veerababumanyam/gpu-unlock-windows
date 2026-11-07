@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2026-11-07
+
+### Fixed
+- USB preparation now validates the generated staging files **before** touching
+  the stick, and backs up an existing `EFI/BOOT/BOOTX64.EFI` **before** a
+  requested FAT32 format could erase it.
+- The Turing gate record (`gsp-gate.txt`) is copied to the stick with the other
+  verified files.
+- A failed BitLocker query is reported as a warning instead of incorrectly
+  saying BitLocker is not present.
+- The uninstall wizard no longer falls back to `Install-App.ps1`, which cannot
+  process the clean-stick options; it now reports a missing `Uninstall.ps1`
+  clearly.
+
 ## [2.2.1] - 2026-11-07
 
 ### Added

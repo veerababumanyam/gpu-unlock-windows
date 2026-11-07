@@ -13,7 +13,7 @@ if (Test-Path -LiteralPath $versionPath) {
     $version = (Get-Content -LiteralPath $versionPath -Raw).Trim()
 }
 else {
-    $version = '2.2.1'
+    $version = '2.2.2'
 }
 
 function Test-IsAdmin {
@@ -237,11 +237,8 @@ function Start-Uninstall {
 
     $uninstallScript = Join-Path $repoRoot 'Uninstall.ps1'
     if (-not (Test-Path -LiteralPath $uninstallScript)) {
-        $uninstallScript = Join-Path $repoRoot 'Install-App.ps1'
-    }
-    if (-not (Test-Path -LiteralPath $uninstallScript)) {
         $lblProgress.Text = 'Uninstaller not found.'
-        $txtLog.Text = 'Uninstall.ps1 and Install-App.ps1 were not found next to this wizard.'
+        $txtLog.Text = 'Uninstall.ps1 was not found next to this wizard. Reinstall GPU Unlock and try again.'
         Complete-Uninstall 1
         return
     }

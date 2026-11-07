@@ -39,6 +39,28 @@ function Install-UnlockStick {
     $vol = Get-UnlockStick -DriveLetter $DriveLetter -Interactive:$Interactive
     $root = "$($vol.DriveLetter):\"
 
+    # Validate the generated files before changing or formatting the stick.
+    $check = Test-UnlockStaging -Root $Staging -Family $Family
+    if (-not $check.Ok) { throw ('Staging incomplete: ' + ($check.Missing -join ', ')) }
+
+    # Preserve the existing boot loader before a format could erase it.
+    $efiRel = ($cfg.efiPath -replace '/', '\')
+    $existing = Join-Path $root $efiRel
+    $backed = $false
+    if (Test-Path -LiteralPath $existing) {
+        if ($WhatIf) {
+            Write-Host "[WhatIf] Would backup existing $efiRel to $BackupRoot"
+        } else {
+            $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+            $bak = Join-Path $BackupRoot $stamp
+            New-Item -ItemType Directory -Force -Path $bak | Out-Null
+            Copy-Item -LiteralPath $existing -Destination (Join-Path $bak 'BOOTX64.EFI') -Force
+            $backed = $true
+            Write-Host "Backed up existing $efiRel to $bak" -ForegroundColor Cyan
+        }
+    }
+
+    $formatted = $false
     if ($vol.FileSystem -ne 'FAT32') {
         if (-not $FormatStick) {
             if ($Interactive) {
@@ -58,29 +80,12 @@ function Install-UnlockStick {
         }
         if (-not $ConfirmFormat) { throw 'Refusing to format without -ConfirmFormat.' }
         if ($WhatIf) {
+            $formatted = $true
             Write-Host "[WhatIf] Would format $root to FAT32"
         } else {
             Format-Volume -DriveLetter $vol.DriveLetter -FileSystem FAT32 -NewFileSystemLabel $global:StickLabel -Confirm:$false -Force | Out-Null
+            $formatted = $true
             Write-Host "Formatted $root to FAT32." -ForegroundColor Green
-        }
-    }
-
-    $check = Test-UnlockStaging -Root $Staging -Family $Family
-    if (-not $check.Ok) { throw ('Staging incomplete: ' + ($check.Missing -join ', ')) }
-
-    $efiRel = ($cfg.efiPath -replace '/', '\')
-    $existing = Join-Path $root $efiRel
-    $backed = $false
-    if (Test-Path -LiteralPath $existing) {
-        if ($WhatIf) {
-            Write-Host "[WhatIf] Would backup existing $efiRel to $BackupRoot"
-        } else {
-            $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-            $bak = Join-Path $BackupRoot $stamp
-            New-Item -ItemType Directory -Force -Path $bak | Out-Null
-            Copy-Item -LiteralPath $existing -Destination (Join-Path $bak 'BOOTX64.EFI') -Force
-            $backed = $true
-            Write-Host "Backed up existing $efiRel to $bak" -ForegroundColor Cyan
         }
     }
 
@@ -110,6 +115,15 @@ function Install-UnlockStick {
         }
     }
 
+    $gate = Join-Path $Staging 'gsp-gate.txt'
+    if (Test-Path -LiteralPath $gate) {
+        if ($WhatIf) {
+            Write-Host "[WhatIf] Would copy gsp-gate.txt to stick"
+        } else {
+            Copy-Item -LiteralPath $gate -Destination (Join-Path $root 'gsp-gate.txt') -Force
+        }
+    }
+
     $bad = @()
     if (-not $WhatIf) {
         foreach ($rel in $check.Expected) {
@@ -118,9 +132,14 @@ function Install-UnlockStick {
             $b = (Get-FileHash -LiteralPath (Join-Path $root $relWin) -Algorithm SHA256).Hash
             if ($a -ne $b) { $bad += $rel }
         }
+        if (Test-Path -LiteralPath $gate) {
+            $a = (Get-FileHash -LiteralPath $gate -Algorithm SHA256).Hash
+            $b = (Get-FileHash -LiteralPath (Join-Path $root 'gsp-gate.txt') -Algorithm SHA256).Hash
+            if ($a -ne $b) { $bad += 'gsp-gate.txt' }
+        }
     }
 
-    [pscustomobject]@{ Root = $root; Volume = $vol; Ok = ($bad.Count -eq 0); Bad = $bad; BackedUp = $backed; Formatted = ($vol.FileSystem -ne 'FAT32' -and $FormatStick) }
+    [pscustomobject]@{ Root = $root; Volume = $vol; Ok = ($bad.Count -eq 0); Bad = $bad; BackedUp = $backed; Formatted = $formatted }
 }
 
 Export-ModuleMember -Function Test-UnlockStaging, Install-UnlockStick
